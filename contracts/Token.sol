@@ -79,6 +79,7 @@ contract Token  {
         _name = name;
         _symbol = symbol;
         _decimals = 18;
+        _mint(msg.sender, 1000);
     }
     function name() public view returns (string memory) {
         return _name;
