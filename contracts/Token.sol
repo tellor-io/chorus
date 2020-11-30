@@ -75,9 +75,9 @@ contract Token  {
     string private _symbol;
     uint8 private _decimals;
 
-    constructor (string memory name, string memory symbol) {
-        _name = name;
-        _symbol = symbol;
+    constructor (string memory n, string memory s) {
+        _name = n;
+        _symbol = s;
         _decimals = 18;
         _mint(msg.sender, 1000);
     }
