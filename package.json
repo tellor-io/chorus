@@ -1,5 +1,5 @@
 {
-  "name": "community-currency",
+  "name": "chorus",
   "version": "1.0.0",
   "description": "A protocol for creating stable community currencies",
   "main": "index.js",
@@ -8,14 +8,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/tellor-io/Community-Currency.git"
+    "url": "git+https://github.com/tellor-io/chorus.git"
   },
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/tellor-io/Community-Currency/issues"
+    "url": "https://github.com/tellor-io/chorus/issues"
   },
-  "homepage": "https://github.com/tellor-io/Community-Currency#readme",
+  "homepage": "https://github.com/tellor-io/chorus#readme",
   "devDependencies": {
     "@nomiclabs/hardhat-ethers": "^2.0.1",
     "@nomiclabs/hardhat-waffle": "^2.0.0",
@@ -24,5 +24,9 @@
     "ethers": "^5.0.23",
     "hardhat": "^2.0.4",
     "solidity-coverage": "^0.7.12"
+  },
+  "dependencies": {
+    "@openzeppelin/contracts": "^3.3.0",
+    "usingtellor": "git+https://github.com/tellor-io/usingtellor.git#master"
   }
 }
