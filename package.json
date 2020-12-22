@@ -18,15 +18,20 @@
   "homepage": "https://github.com/tellor-io/chorus#readme",
   "devDependencies": {
     "@nomiclabs/hardhat-ethers": "^2.0.1",
+    "@nomiclabs/hardhat-etherscan": "^2.1.0",
     "@nomiclabs/hardhat-waffle": "^2.0.0",
     "chai": "^4.2.0",
+    "dotenv": "^8.2.0",
     "ethereum-waffle": "^3.2.1",
     "ethers": "^5.0.23",
     "hardhat": "^2.0.4",
-    "solidity-coverage": "^0.7.12"
+    "hardhat-dependency-compiler": "^1.0.0",
+    "hardhat-gas-reporter": "^1.0.3",
+    "solidity-coverage": "^0.7.12",
+    "tellorplayground": "github:tellor-io/tellorplayground#main"
   },
   "dependencies": {
     "@openzeppelin/contracts": "^3.3.0",
-    "usingtellor": "git+https://github.com/tellor-io/usingtellor.git#master"
+    "usingtellor": "github:tellor-io/usingtellor#master"
   }
 }

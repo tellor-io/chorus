@@ -1,6 +1,8 @@
 require("@nomiclabs/hardhat-waffle");
 require("@nomiclabs/hardhat-etherscan");
 require("dotenv").config();
+require('hardhat-dependency-compiler');
+require("hardhat-gas-reporter");
 
 
 task("accounts", "Prints the list of accounts", async () => {
@@ -16,7 +18,7 @@ task("deploy", "Deploy and verify the contracts")
     var masterAddress = taskArgs.masterAddress
     await run("compile");
 
-    const t = await ethers.getContractFactory("Master");
+    const t = await ethers.getContractFactory("Main");
     const contract = await t.deploy();
     await contract.deployed();
     console.log("contract deployed to:", contract.address);
@@ -40,6 +42,14 @@ task("deploy", "Deploy and verify the contracts")
  * @type import('hardhat/config').HardhatUserConfig
  */
 module.exports = {
+  dependencyCompiler: {
+    paths: [
+      'tellorplayground/contracts/TellorPlayground.sol',
+    ],
+  },
+  gasReporter: {
+    enabled: (process.env.REPORT_GAS == "true") ? true : false
+  },
   defaultNetwork: "hardhat",
   networks: {
     hardhat: {
@@ -58,6 +68,15 @@ module.exports = {
     // Obtain one at https://etherscan.io/
     apiKey: process.env.ETHERSCAN
   },
-  solidity: "0.7.3",
+  solidity: {
+    compilers: [
+      {
+        version: "0.7.3"
+      },
+      {
+        version: "0.7.0",
+      }
+    ]
+  }
 };
 

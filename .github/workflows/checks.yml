@@ -23,3 +23,9 @@ jobs:
         node-version: ${{ matrix.node-version }}
     - run: npm install
     - run: npx hardhat test
+      env:
+        # These are not needed for the tests but
+        # hardhat fails to start if not present.
+        INFURA_RINKEBY: "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+        INFURA_MAINNET: "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+        PRIVATE_KEY: "00000000000000000000000000000000000000000000000000"
