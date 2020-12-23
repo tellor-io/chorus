@@ -65,9 +65,7 @@ contract Inflation is DSMath {
         uint256 _principal,
         uint256 _rate,
         uint256 _age
-    ) public view returns (uint256) {
-        console.log('contract inflation',_principal,_rate,_age);
-        
+    ) public pure returns (uint256) {
         return rdiv(_principal, rpow(_rate, _age));
     }
 
@@ -89,7 +87,8 @@ contract Inflation is DSMath {
      *   convert from a decimal value to a wad.
      *   So 5% rate should be input as yearlyRateToRay( 0.05 ether )
      * @return 1 * 10 ** 27 + Effective Interest Rate Per Second * 10 ** 27
-     */    
+     */
+
     function yearlyRateToPerSec(uint256 _rateWad)
         public
         pure

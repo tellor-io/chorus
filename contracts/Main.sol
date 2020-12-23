@@ -21,7 +21,7 @@ contract Main is ERC20, UsingTellor, Inflation {
     uint256 public collateralID; // The id on Tellor oracle where to check the collateral token price.
     uint256 public collateralPriceGranularity;
     ERC20 public collateralToken;
-    uint256 public collateralThreshold = 50e18; // 50%.
+    uint256 public collateralThreshold = 5e17; // 50%.
     uint256 public collateralPriceAge = 3600; // 1h.
     uint256 public liquidationPenatly = 0;
 
@@ -138,13 +138,12 @@ contract Main is ERC20, UsingTellor, Inflation {
         }
 
         uint256 collateralValue = wmul(collateralPrice(), totalSupply());
-        uint256 tokenValue = wmul(tokenPrice(), token.totalSupply());
 
-        // console.log('tokenPrice',tokenPrice());
-        // console.log('totalSupply',token.totalSupply());
+        uint256 secsPassed = block.timestamp - inflLastUpdate;
+        uint256 tokenSupplyWithInflInterest =
+            accrueInterest(token.totalSupply(), inflRatePerSec, secsPassed);
 
-        // console.log('collateralValue',collateralValue);
-        // console.log('tokenValue',tokenValue);
+        uint256 tokenValue = wmul(tokenPrice(), tokenSupplyWithInflInterest);
 
         return wdiv(tokenValue, collateralValue);
     }
@@ -154,9 +153,6 @@ contract Main is ERC20, UsingTellor, Inflation {
         (bool _didGet, uint256 _collateralPrice, ) =
             getDataBefore(collateralID, block.timestamp - collateralPriceAge);
         require(_didGet, "getting oracle price");
-
-        // console.log(' coll price', sub(18,collateralPriceGranularity),_collateralPrice);
-
         return mul(_collateralPrice, div(1e18, collateralPriceGranularity));
     }
 
@@ -186,9 +182,7 @@ contract Main is ERC20, UsingTellor, Inflation {
     // The max minted tokens can be up to the max utulization threshold.
     // Noone should be allowed to mint above the utilizationThreshold otherwise can drain the pool.
     function mintToken(uint256 amount, address to) public onlyAdmin {
-        token.mint(to, amount); // TODO Add e2e test to ensure that this is reverted when above the collateral threshold.
-        console.log("collateralUtilization()", collateralUtilization());
-
+        token.mint(to, amount);
         require(
             collateralUtilization() < collateralThreshold,
             "minting tokens will cause collateral utilization to go above the allowed threshold"
@@ -209,6 +203,7 @@ contract Main is ERC20, UsingTellor, Inflation {
         return token.totalSupply();
     }
 
+    // TODO add test
     function withdrawToken(uint256 amount) external {
         require(amount > 0, "amount should be greater than 0");
         uint256 balance = token.balanceOf(msg.sender);
