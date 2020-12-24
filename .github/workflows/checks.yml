@@ -41,13 +41,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
       - name: Slither Static Analysis
-        uses: luisfontes19/slither-static-analysis-action@v0.3.0
+        uses: actions/setup-node@v1
         with:
-          slither-version: '0.7.0'
-          run-npm-install: true
-          high-threshold: 1
-          medium-threshold: 1
-          low-threshold: 1
-          optimization-threshold: 1
-          informative-threshold: 10
-          projectPath: "."
+          node-version: '14.x'
+      - run: npm install --production
+      - run: sudo apt-get install python3-setuptools
+      - run: wget https://github.com/ethereum/solidity/releases/download/v0.7.5/solc-static-linux && sudo mv solc-static-linux /usr/bin/solc && sudo chmod 744 /usr/bin/solc
+      - run: git clone https://github.com/crytic/slither.git && cd slither && sudo python3 setup.py install
+      - run: npm install -g wenshenjun/truffle-flattener # TODO Remove once this is merged - https://github.com/nomiclabs/truffle-flattener/pull/66
+      - run: truffle-flattener contracts/Main.sol | awk '/SPDX-License-Identifier/&&c++>0 {next} 1' | awk '/pragma experimental ABIEncoderV2;/&&c++>0 {next} 1' > ./flatten.sol
+      - run: "[ -s flatten.sol ] || exit 1"
+      - run: slither flatten.sol --exclude naming-convention,solc-version,pragma
