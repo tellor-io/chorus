@@ -13,6 +13,7 @@ contract DSMath {
         require((z = x - y) <= x, "ds-math-sub-underflow");
     }
 
+    // slither-disable-next-line incorrect-equality
     function mul(uint256 x, uint256 y) internal pure returns (uint256 z) {
         require(y == 0 || (z = x * y) / y == x, "ds-math-mul-overflow");
     }

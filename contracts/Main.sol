@@ -6,7 +6,6 @@ import "./Token.sol";
 import "./Math.sol";
 import "./Inflation.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import "hardhat/console.sol";
 
 // The contract is also an ERC20 token which holds the collateral currency.
 // It also holds the semi stable token state inside the `token` variable.
@@ -53,6 +52,7 @@ contract Main is ERC20, UsingTellor, Inflation {
         collateralToken = ERC20(_collateralToken);
         collateralPriceGranularity = _collateralPriceGranularity;
 
+        require(_inflBeneficiary != address(0), "benificiary address not set");
         inflBeneficiary = _inflBeneficiary;
         inflRatePerSec = yearlyRateToPerSec(_inflRatePerYear);
 
@@ -77,7 +77,10 @@ contract Main is ERC20, UsingTellor, Inflation {
     function depositCollateral(uint256 amount) external onlyAdmin {
         require(amount > 0, "deposit amount 0");
         _mint(msg.sender, amount);
-        collateralToken.transferFrom(msg.sender, address(this), amount);
+        require(
+            collateralToken.transferFrom(msg.sender, address(this), amount),
+            "failed transfer"
+        );
     }
 
     // Anyone can deposit collateral, but only admin can withdraw.
@@ -119,7 +122,8 @@ contract Main is ERC20, UsingTellor, Inflation {
     // increases the total supply by the inflation rate and
     // sends the new tokens to the inflation beneficiary.
     // TODO add tests for this.
-    function updateInflation() public {
+    // slither-disable-next-line timestamp
+    function updateInflation() external {
         uint256 secsPassed = block.timestamp - inflLastUpdate;
         require(secsPassed > 0, "no inflation increase yet");
 
@@ -168,7 +172,7 @@ contract Main is ERC20, UsingTellor, Inflation {
         collateralThreshold = value;
     }
 
-    function setCollateralPriceAge(uint256 value) public onlyAdmin {
+    function setCollateralPriceAge(uint256 value) external onlyAdmin {
         collateralPriceAge = value;
     }
 
@@ -182,7 +186,7 @@ contract Main is ERC20, UsingTellor, Inflation {
 
     // The max minted tokens can be up to the max utulization threshold.
     // Noone should be allowed to mint above the utilizationThreshold otherwise can drain the pool.
-    function mintToken(uint256 amount, address to) public onlyAdmin {
+    function mintToken(uint256 amount, address to) external onlyAdmin {
         token.mint(to, amount);
         require(
             collateralUtilization() < collateralThreshold,
@@ -200,7 +204,7 @@ contract Main is ERC20, UsingTellor, Inflation {
             );
     }
 
-    function tokenTotalSupply() public view returns (uint256) {
+    function tokenTotalSupply() external view returns (uint256) {
         return token.totalSupply();
     }
 
@@ -214,7 +218,7 @@ contract Main is ERC20, UsingTellor, Inflation {
         uint256 pctOfCollateral = wmul(collateralPrice(), priceRatio);
         uint256 amountOfCollateral = wmul(pctOfCollateral, balance);
 
-        token.burn(msg.sender, balance);
         transfer(msg.sender, amountOfCollateral);
+        token.burn(msg.sender, balance);
     }
 }
