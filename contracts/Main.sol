@@ -13,10 +13,8 @@ import "hardhat/console.sol";
 contract Main is ERC20, UsingTellor, Inflation {
     address public admin = msg.sender;
 
-    uint256 immutable creationTimestamp = block.timestamp;
-
     Token private token;
-    uint256 tknPrice = 1e18;
+    uint256 public tknPrice = 1e18;
 
     uint256 public collateralID; // The id on Tellor oracle where to check the collateral token price.
     uint256 public collateralPriceGranularity;
@@ -27,9 +25,9 @@ contract Main is ERC20, UsingTellor, Inflation {
 
     // The rate at which the token decreases value.
     // 1e18 precision. 100e18 is 100%.
-    uint256 inflRatePerSec;
+    uint256 public inflRatePerSec;
     uint256 public inflLastUpdate = block.timestamp;
-    address inflBeneficiary; // Where to send the inflation tokens.
+    address public inflBeneficiary; // Where to send the inflation tokens.
 
     constructor(
         address _collateralToken,
@@ -62,7 +60,7 @@ contract Main is ERC20, UsingTellor, Inflation {
     }
 
     modifier onlyAdmin {
-        require(msg.sender == admin, "Only admin can call this function.");
+        require(msg.sender == admin, "not an admin");
         _;
     }
 
@@ -86,17 +84,19 @@ contract Main is ERC20, UsingTellor, Inflation {
     // Otherwise the logic for how much tokens a given collateral provider can mint becomes more complicated.
     // If we track the balance of each collateral provider then
     // he should be allowed to mint up to the maximum amount based on his collateral deposit share.
-    // Otherwise lets say a provider deposits 1ETH and mints all tokens to himself can drain the collateral of all providers.
+    // Otherwise lets say a provider deposits 1ETH and mints all tokens to himself
+    // can drain the collateral of all providers.
     function withdrawCollateral(uint256 amount) external onlyAdmin {
         _burn(msg.sender, amount);
         require(
             collateralUtilization() < collateralThreshold,
-            "withdraw will result the collateral utilizatoin below the collateral threshold"
+            "collateral utilizatoin too high"
         );
         transfer(msg.sender, amount);
     }
 
-    // Calculate how much percents of the total supply this sender owns and withdraw the same amount of percents  minus the penalty from the collateral.
+    // Calculate how much percents of the total supply this sender owns and
+    // withdraw the same amount of percents  minus the penalty from the collateral.
     // Example:
     // token totalSupply is 10000,
     // collateral totalSupply is 1000
@@ -106,7 +106,7 @@ contract Main is ERC20, UsingTellor, Inflation {
     function liquidate() external {
         require(
             collateralUtilization() > collateralThreshold,
-            "can run a liquidation only when collateral utilizatoin is above the collateral threshold"
+            "collateral utilizatoin is below threshold"
         );
         uint256 tsRatio = wdiv(totalSupply(), token.totalSupply());
         uint256 collAmt = wmul(totalSupply(), tsRatio);
@@ -158,7 +158,8 @@ contract Main is ERC20, UsingTellor, Inflation {
 
     // WARNING You would usually want to put this through a vote from the token holders
     // or the collateral provider can set it very low and drain all collateral.
-    // Usually the owner should be another contract so that it is allowed to change it only after a vote from the token holders.
+    // Usually the owner should be another contract so that
+    // it is allowed to change it only after a vote from the token holders.
     function setCollateralThreshold(uint256 value)
         external
         onlyAdmin
@@ -185,7 +186,7 @@ contract Main is ERC20, UsingTellor, Inflation {
         token.mint(to, amount);
         require(
             collateralUtilization() < collateralThreshold,
-            "minting tokens will cause collateral utilization to go above the allowed threshold"
+            "minting will cause collateral utilization to go above the threshold"
         );
     }
 

@@ -16,5 +16,6 @@ contract Token is ERC20 {
         _mint(account, amount);
     }
 
+    // solhint-disable-next-line no-empty-blocks
     constructor(string memory name, string memory symbol) ERC20(name, symbol) {}
 }

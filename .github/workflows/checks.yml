@@ -8,19 +8,14 @@ on:
   pull_request:
 
 jobs:
-  Tests:
+  Testing:
     runs-on: ubuntu-latest
-
-    strategy:
-      matrix:
-        node-version: [14.x]
-
     steps:
     - uses: actions/checkout@v2
     - name: Run tests with Node.js ${{ matrix.node-version }}
       uses: actions/setup-node@v1
       with:
-        node-version: ${{ matrix.node-version }}
+        node-version: '14.x'
     - run: npm install
     - run: npx hardhat test
       env:
@@ -29,10 +24,19 @@ jobs:
         INFURA_RINKEBY: "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
         INFURA_MAINNET: "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
         PRIVATE_KEY: "00000000000000000000000000000000000000000000000000"
-
-  Slither:
+  Linting:
     runs-on: ubuntu-latest
-    name: Solidity Security
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Run Solhint
+        uses: actions/setup-node@v1
+        with:
+          node-version: '14.x'
+      - run: npm install -g solhint
+      - run: solhint 'contracts/**/*.sol'
+  Security:
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v2
