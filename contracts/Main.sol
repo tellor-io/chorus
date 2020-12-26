@@ -79,7 +79,7 @@ contract Main is ERC20, UsingTellor, Inflation {
         _mint(msg.sender, amount);
         require(
             collateralToken.transferFrom(msg.sender, address(this), amount),
-            "failed transfer"
+            "failed collateral deposit transfer"
         );
     }
 
@@ -93,9 +93,9 @@ contract Main is ERC20, UsingTellor, Inflation {
         _burn(msg.sender, amount);
         require(
             collateralUtilization() < collateralThreshold,
-            "collateral utilizatoin too high"
+            "collateral utilization above the threshold"
         );
-        transfer(msg.sender, amount);
+        require(transfer(msg.sender, amount), "collateral transfer fails");
     }
 
     // Calculate how much percents of the total supply this sender owns and
@@ -113,9 +113,12 @@ contract Main is ERC20, UsingTellor, Inflation {
         );
         uint256 tsRatio = wdiv(totalSupply(), token.totalSupply());
         uint256 collAmt = wmul(totalSupply(), tsRatio);
-        uint256 collAmtPenalty =
+        uint256 collAmntPenalty =
             sub(collAmt, wmul(collAmt, liquidationPenatly));
-        transfer(msg.sender, collAmtPenalty);
+        require(
+            transfer(msg.sender, collAmntPenalty),
+            "collateral liquidate transfer fails"
+        );
     }
 
     // Reduce token price by the inflation rate,
@@ -190,7 +193,7 @@ contract Main is ERC20, UsingTellor, Inflation {
         token.mint(to, amount);
         require(
             collateralUtilization() < collateralThreshold,
-            "minting will cause collateral utilization to go above the threshold"
+            "collateral utilization above the threshold"
         );
     }
 
@@ -208,7 +211,6 @@ contract Main is ERC20, UsingTellor, Inflation {
         return token.totalSupply();
     }
 
-    // TODO add test
     function withdrawToken(uint256 amount) external {
         require(amount > 0, "amount should be greater than 0");
         uint256 balance = token.balanceOf(msg.sender);
@@ -218,7 +220,10 @@ contract Main is ERC20, UsingTellor, Inflation {
         uint256 pctOfCollateral = wmul(collateralPrice(), priceRatio);
         uint256 amountOfCollateral = wmul(pctOfCollateral, balance);
 
-        transfer(msg.sender, amountOfCollateral);
+        require(
+            transfer(msg.sender, amountOfCollateral),
+            "collateral transfer fail"
+        );
         token.burn(msg.sender, balance);
     }
 }
