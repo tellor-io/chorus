@@ -112,6 +112,8 @@ contract DSMath {
     //  Also, EVM division is flooring and
     //    floor[(n-1) / 2] = floor[n / 2].
     //
+    // Not sure if this is a false positive - https://github.com/dapphub/ds-math/issues/18
+    // slither-disable-next-line weak-prng
     function rpow(uint256 x, uint256 n) internal pure returns (uint256 z) {
         z = n % 2 != 0 ? x : RAY;
 

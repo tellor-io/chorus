@@ -161,8 +161,7 @@ describe("All tests", function () {
     await waffle.provider.send("evm_setNextBlockTimestamp", [evmCurrentBlockTime]);
     await waffle.provider.send("evm_mine");
 
-    // This account owns 40%(160) of the total tokens supply so
-    // should receive 40% of the collateral.
+    // This account owns 40% of the total tokens supply so should receive 40% of the collateral.
     account = acc1
     expect(await collateral.balanceOf(account.address)).to.equal(0);
     await testee.connect(account).liquidate();
@@ -172,8 +171,7 @@ describe("All tests", function () {
     await expect(testee.connect(account).liquidate()).to.be.reverted
 
 
-    // This account owns 60% of the total tokens supply so
-    // should receive 60% of the collateral.
+    // This account owns 60% of the total tokens supply so should receive 60% of the collateral.
     account = acc2
     expect(await collateral.balanceOf(account.address)).to.equal(0);
     await testee.connect(account).liquidate();

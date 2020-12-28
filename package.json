@@ -32,6 +32,6 @@
   },
   "dependencies": {
     "@openzeppelin/contracts": "^3.3.0",
-    "usingtellor": "github:tellor-io/usingtellor#master"
+    "usingtellor": "github:krasi-georgiev/usingtellor#enablie-ci"
   }
 }
