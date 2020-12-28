@@ -3,8 +3,6 @@ pragma solidity ^0.7.3;
 
 import "./Math.sol";
 
-import "hardhat/console.sol";
-
 // Borrowed from https://github.com/wolflo/solidity-interest-helper.
 // Inspired by https://medium.com/coinmonks/math-in-solidity-part-4-compound-interest-512d9e13041b
 // Using DSMath from DappHub https://github.com/dapphub/ds-math

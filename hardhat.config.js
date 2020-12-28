@@ -77,6 +77,9 @@ module.exports = {
         version: "0.7.0",
       }
     ]
+  },
+  mocha: {
+    timeout: 600000 // 10mins test timeout.
   }
 };
 

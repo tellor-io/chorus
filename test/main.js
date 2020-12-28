@@ -1,8 +1,8 @@
 const { expect } = require("chai");
-const { fips } = require("crypto");
 const path = require("path")
 
-let owner, acc1, acc2, acc3, acc4, acc5;
+let owner, acc1, acc2, acc3, acc4, benificiary;
+let collateral;
 
 let testee;
 let tellor;
@@ -19,8 +19,8 @@ const tokenSymbol = "NTO";
 const inflRate = 5e17; // 50% compound inflation per year.
 const tokenPrice = 1e18;
 
-let secsPerYear = 365 * 24 * 60 * 60
-var inflRatePerSec = ((inflRate / 1e10) / (secsPerYear * 10e7))
+const secsPerYear = 365 * 24 * 60 * 60
+const inflRatePerSec = ((inflRate / 1e10) / (secsPerYear * 10e7))
 
 var evmCurrentBlockTime = Math.round((Number(new Date().getTime())) / 1000);
 
@@ -31,34 +31,65 @@ var evmCurrentBlockTime = Math.round((Number(new Date().getTime())) / 1000);
 // but this is too slow so will an algorithm that has a very small precision error.
 // div(_principal, pow(1+_rate, _age));
 // https://medium.com/coinmonks/math-in-solidity-part-4-compound-interest-512d9e13041b
-function tokenPriceInfl(secsPassed) {
-
+function accrueInflation(principal, secsPassed) {
   let rate = 1 + inflRatePerSec;
-  tokenPriceInfl = tokenPrice / rate ** secsPassed // The magic formula from https://medium.com/coinmonks/math-in-solidity-part-4-compound-interest-512d9e13041b
+  infl = principal / rate ** secsPassed // The magic formula from https://medium.com/coinmonks/math-in-solidity-part-4-compound-interest-512d9e13041b
 
-  return tokenPriceInfl;
+  return BigInt(infl);
+}
+
+function accrueInterest(principal, secsPassed) {
+  let rate = 1 + inflRatePerSec;
+  interest = principal * (rate ** secsPassed)
+
+  return BigInt(interest - principal);
 }
 
 describe("All tests", function () {
   it("Token Inflation", async function () {
-    let collateralDeposit = 1000n;
+    let collateralDeposit = 10n;
     await testee.depositCollateral(collateralDeposit * precision)
 
-    await testee.mintToken(100n * precision, acc1.address)
+    let mintedTokens = 100n * precision
+    await testee.mintToken(mintedTokens, acc1.address)
     evmCurrentBlockTime += secsPerYear;
     await waffle.provider.send("evm_setNextBlockTimestamp", [evmCurrentBlockTime]);
     await waffle.provider.send("evm_mine");
     let secsPassed = evmCurrentBlockTime - Number(await testee.inflLastUpdate())
 
-    // Concatenated the decimal precision because there is a small rounding error.
-    let actPriceRounded = Number(await testee.tokenPrice()).toString().substring(0, 7);
-    let expPriceRounded = tokenPriceInfl(secsPassed).toString().substring(0, 7);
-    expect(expPriceRounded).to.equal(actPriceRounded)
+    let actPrice = Number(await testee.tokenPrice())
+    let expPrice = Number(accrueInflation(tokenPrice, secsPassed))
+    // There is a rounding error so ignore the difference after the rounding error.
+    // The total precision is enough that this rounding shouldn't matter.
+    expect(expPrice).to.be.closeTo(actPrice, 1500000000)
   });
 
-  it("Collateral utilization", async function () {
+  it("Minting tokens to the inflation benificiary", async function () {
     let collateralDeposit = 10n;
     await testee.depositCollateral(collateralDeposit * precision)
+
+    let mintedTokens = 100n * precision
+    await testee.mintToken(mintedTokens, acc1.address)
+    evmCurrentBlockTime += secsPerYear;
+    await waffle.provider.send("evm_setNextBlockTimestamp", [evmCurrentBlockTime]);
+    await waffle.provider.send("evm_mine");
+    let secsPassed = evmCurrentBlockTime - Number(await testee.inflLastUpdate())
+
+    expect(await testee.tokenBalanceOf(benificiary.address)).to.equal(0) // Start with 0
+    let expInflBeneficiaryTokens = Number(accrueInterest(await testee.tokenTotalSupply(), secsPassed))
+
+    await testee.updateInflation()
+    let actInflBeneficiaryTokens = Number(await testee.tokenBalanceOf(benificiary.address))
+    // There is a rounding error so ignore the difference after the rounding error.
+    // The total precision is enough that this rounding shouldn't matter.
+    expect(actInflBeneficiaryTokens).to.be.closeTo(expInflBeneficiaryTokens, 4000000000000)
+  })
+
+
+  it("Collateral deposit and utilization", async function () {
+    let collateralDeposit = 10n;
+    await testee.depositCollateral(collateralDeposit * precision)
+    expect(await collateral.balanceOf(testee.address)).to.equal(collateralDeposit * precision)
     expect(await testee.collateralUtilization()).to.equal(0)
 
     let tokensMinted = 499n;
@@ -70,7 +101,6 @@ describe("All tests", function () {
     evmCurrentBlockTime += 100;
     await waffle.provider.send("evm_setNextBlockTimestamp", [evmCurrentBlockTime]);
     await waffle.provider.send("evm_mine");
-    let secsPassed = evmCurrentBlockTime - Number(await testee.inflLastUpdate())
 
     let totalTokenValue = Number(tokensMinted) * tokenPrice
     let collateralValue = collateralDeposit * BigInt(collateralPrice) * precision
@@ -98,12 +128,102 @@ describe("All tests", function () {
     // Ensure the transaction didn't change the total supply
     expect(tokensMinted).to.equal(BigInt(await testee.tokenTotalSupply()) / precision)
   });
+
+  it("Withdraw collateral", async function () {
+    let collateralDeposit = 10n;
+    await testee.depositCollateral(collateralDeposit * precision)
+    expect(await collateral.balanceOf(owner.address)).to.equal(0);
+    // Collateral price is 100 so total collateral value is 1000
+    // 400 minted tokens are worth 400 which is 40% collateral utilization.
+    // This is 10% below the  50% collateral thershold so
+    // should be able to withdraw 10% of the collateral.
+    let tokensMinted = 400n;
+    await testee.mintToken(tokensMinted * precision, acc1.address)
+    let expWithdrawAmnt = 1n * precision;
+    await testee.withdrawCollateral(expWithdrawAmnt)
+    expect(await collateral.balanceOf(owner.address)).to.equal(expWithdrawAmnt);
+
+    await expect(testee.withdrawCollateral(1n * precision), "collateral withdraw puts the system below the threshold").to.be.reverted
+    expect(await collateral.balanceOf(owner.address)).to.equal(expWithdrawAmnt);
+  })
+
+  it("Liquidation", async function () {
+    // Put the system into 40% collateral utilization.
+    let collateralDeposit = 10;
+    await testee.depositCollateral(BigInt(collateralDeposit) * precision)
+    let tokensTotalSupply = 400;
+    await testee.mintToken(BigInt(tokensTotalSupply * 0.4) * precision, acc1.address) // 40% ot the total supply.
+    await testee.mintToken(BigInt(tokensTotalSupply * 0.6) * precision, acc2.address) // 60% ot the total supply.
+
+    // Reduce the collateral price by 50% to put the system into liquation state.
+    await tellor.submitValue(collateralID, (collateralPrice / 2) * collateralPriceGranularity)
+    evmCurrentBlockTime = evmCurrentBlockTime + Number(await testee.collateralPriceAge()) + 100
+    await waffle.provider.send("evm_setNextBlockTimestamp", [evmCurrentBlockTime]);
+    await waffle.provider.send("evm_mine");
+
+    // This account owns 40%(160) of the total tokens supply so
+    // should receive 40% of the collateral.
+    account = acc1
+    expect(await collateral.balanceOf(account.address)).to.equal(0);
+    await testee.connect(account).liquidate();
+    expect(await collateral.balanceOf(account.address)).to.equal(BigInt(collateralDeposit * 0.4) * precision);
+    expect(await testee.tokenBalanceOf(account.address)).to.equal(0);
+    expect(await testee.balanceOf(owner.address)).to.equal(BigInt(collateralDeposit * 0.6) * precision);
+    await expect(testee.connect(account).liquidate()).to.be.reverted
+
+
+    // This account owns 60% of the total tokens supply so
+    // should receive 60% of the collateral.
+    account = acc2
+    expect(await collateral.balanceOf(account.address)).to.equal(0);
+    await testee.connect(account).liquidate();
+    expect(await collateral.balanceOf(account.address)).to.equal(BigInt(collateralDeposit * 0.6) * precision);
+    expect(await testee.tokenBalanceOf(account.address)).to.equal(0);
+    expect(await testee.balanceOf(owner.address)).to.equal(0);
+    await expect(testee.connect(account).liquidate()).to.be.reverted
+
+  })
+
+  it("Tokens Withdraw", async function () {
+    let collateralDeposit = 10n
+    let mintedTokens = 400n
+    let account = acc1
+    await testee.depositCollateral(collateralDeposit * precision)
+    await testee.mintToken(mintedTokens * precision, account.address)
+
+    let withdrawCount = 50n
+    let expCollateralWithdrawn = 0
+    for (; mintedTokens > 0;) {
+      mintedTokens -= withdrawCount
+      evmCurrentBlockTime += 60;
+      await waffle.provider.send("evm_setNextBlockTimestamp", [evmCurrentBlockTime]);
+      await waffle.provider.send("evm_mine");
+      let secsPassed = evmCurrentBlockTime - Number(await testee.inflLastUpdate())
+
+      let tknPrice = Number(accrueInflation(tokenPrice, secsPassed))
+      let collatPrice = Number(BigInt(collateralPrice) * precision)
+
+      await testee.connect(account).withdrawToken(withdrawCount * precision);
+      expect(await testee.tokenBalanceOf(account.address)).to.equal((mintedTokens) * precision);
+
+      let priceRatio = tknPrice / collatPrice
+      expCollateralWithdrawn += Number(priceRatio * Number(withdrawCount * precision))
+      let actCollateralWithdrawn = Number(await collateral.balanceOf(account.address))
+
+      // There is a rounding error so ignore the difference after the rounding error.
+      // The total precision is enough that this rounding shouldn't matter.
+      expect(actCollateralWithdrawn).to.be.closeTo(expCollateralWithdrawn, 70000000000)
+      expect(Number(await testee.balanceOf(owner.address))).to.be.closeTo(Number(collateralDeposit * precision - BigInt(expCollateralWithdrawn)), 70000000000);
+    }
+
+    await expect(testee.withdrawToken(1n), "withdraw tokens when balance should be zero").to.be.reverted
+  })
 });
 
 // `beforeEach` will run before each test, re-deploying the contract every
 // time. It receives a callback, which can be async.
 beforeEach(async function () {
-  [owner, acc1, acc2, acc3, acc4, acc5] = await ethers.getSigners();
+  [owner, acc1, acc2, acc3, acc4, benificiary] = await ethers.getSigners();
 
   var fact = await ethers.getContractFactory(path.join("tellorplayground", "contracts", "", "TellorPlayground.sol:TellorPlayground"));
   tellor = await fact.deploy("Tellor", "TRB");
@@ -113,17 +233,13 @@ beforeEach(async function () {
   collateral = await fact.deploy("Etherium", "ETH");
   await collateral.deployed();
 
-  var fact = await ethers.getContractFactory("Token");
-  inflBenificiary = await fact.deploy("Beni", "BNF");
-  await inflBenificiary.deployed();
-
   // Deploy the actual contract to test.
   fact = await ethers.getContractFactory("Main");
   testee = await fact.deploy(
     collateral.address,
     collateralID,
     collateralPriceGranularity,
-    inflBenificiary.address,
+    benificiary.address,
     tellor.address,
     collateralName,
     collateralSymbol,
@@ -141,7 +257,7 @@ beforeEach(async function () {
   await waffle.provider.send("evm_setNextBlockTimestamp", [evmCurrentBlockTime]);
   await waffle.provider.send("evm_mine");
 
-  await collateral.mint(owner.address, BigInt(1e25))
+  await collateral.mint(owner.address, 10n * precision)
   await collateral.increaseAllowance(testee.address, BigInt(1e50));
 
 });

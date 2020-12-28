@@ -95,11 +95,14 @@ contract Main is ERC20, UsingTellor, Inflation {
             collateralUtilization() < collateralThreshold,
             "collateral utilization above the threshold"
         );
-        require(transfer(msg.sender, amount), "collateral transfer fails");
+        require(
+            collateralToken.transfer(msg.sender, amount),
+            "collateral transfer fails"
+        );
     }
 
     // Calculate how much percents of the total supply this sender owns and
-    // withdraw the same amount of percents  minus the penalty from the collateral.
+    // can withdraw the same amount of percents minus the liquidation penalty.
     // Example:
     // token totalSupply is 10000,
     // collateral totalSupply is 1000
@@ -111,13 +114,23 @@ contract Main is ERC20, UsingTellor, Inflation {
             collateralUtilization() > collateralThreshold,
             "collateral utilizatoin is below threshold"
         );
-        uint256 tsRatio = wdiv(totalSupply(), token.totalSupply());
-        uint256 collAmt = wmul(totalSupply(), tsRatio);
-        uint256 collAmntPenalty =
-            sub(collAmt, wmul(collAmt, liquidationPenatly));
         require(
-            transfer(msg.sender, collAmntPenalty),
-            "collateral liquidate transfer fails"
+            token.balanceOf(msg.sender) > 0,
+            "msg sender doesn't own any tokens"
+        );
+
+        uint256 tsRatio = wdiv(totalSupply(), token.totalSupply());
+        uint256 tokensToBurn = token.balanceOf(msg.sender);
+        uint256 collatAmt = wmul(tokensToBurn, tsRatio);
+        uint256 collatAmntPenalty =
+            sub(collatAmt, wmul(collatAmt, liquidationPenatly));
+
+        _burn(admin, collatAmntPenalty);
+        token.burn(msg.sender, tokensToBurn);
+
+        require(
+            collateralToken.transfer(msg.sender, collatAmntPenalty),
+            "collateral liquidation transfer fails"
         );
     }
 
@@ -134,7 +147,11 @@ contract Main is ERC20, UsingTellor, Inflation {
         tknPrice = accrueInflation(tknPrice, inflRatePerSec, secsPassed);
 
         uint256 tokensToMint =
-            accrueInterest(token.totalSupply(), inflRatePerSec, secsPassed);
+            sub(
+                accrueInterest(token.totalSupply(), inflRatePerSec, secsPassed),
+                token.totalSupply()
+            );
+
         token.mint(inflBeneficiary, tokensToMint);
     }
 
@@ -213,17 +230,22 @@ contract Main is ERC20, UsingTellor, Inflation {
 
     function withdrawToken(uint256 amount) external {
         require(amount > 0, "amount should be greater than 0");
-        uint256 balance = token.balanceOf(msg.sender);
-        require(balance > amount, "not enough balance");
+        require(token.balanceOf(msg.sender) >= amount, "not enough balance");
 
-        uint256 priceRatio = wdiv(tokenPrice(), collateralPrice());
-        uint256 pctOfCollateral = wmul(collateralPrice(), priceRatio);
-        uint256 amountOfCollateral = wmul(pctOfCollateral, balance);
+        uint256 collatPrice = collateralPrice();
+        uint256 priceRatio = wdiv(tokenPrice(), collatPrice);
+        uint256 amountOfCollateral = wmul(priceRatio, amount);
+
+        _burn(admin, amountOfCollateral);
 
         require(
-            transfer(msg.sender, amountOfCollateral),
+            collateralToken.transfer(msg.sender, amountOfCollateral),
             "collateral transfer fail"
         );
-        token.burn(msg.sender, balance);
+        token.burn(msg.sender, amount);
+    }
+
+    function tokenBalanceOf(address account) external view returns (uint256) {
+        return token.balanceOf(account);
     }
 }
