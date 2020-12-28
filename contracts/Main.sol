@@ -230,9 +230,9 @@ contract Main is ERC20, UsingTellor, Inflation {
     // The max minted tokens can be up to the max utulization threshold.
     // Noone should be allowed to mint above the utilizationThreshold otherwise can drain the pool.
     function mintToken(uint256 amount, address to) external onlyAdmin {
+        token.mint(to, amount);
         uint256 collatUtilization = collateralUtilization();
         emit MintTokens(msg.sender, amount, to, collatUtilization);
-        token.mint(to, amount);
         require(
             collatUtilization < collateralThreshold,
             "collateral utilization above the threshold"

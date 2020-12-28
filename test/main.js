@@ -124,7 +124,7 @@ describe("All tests", function () {
 
     expect(tokensMinted).to.equal(BigInt(await testee.tokenTotalSupply()) / precision)
 
-    await expect(testee.mintToken(2n * precision, acc1.address)).to.be.reverted
+    await expect(testee.mintToken(1n * precision, acc1.address)).to.be.reverted
     // Ensure the transaction didn't change the total supply
     expect(tokensMinted).to.equal(BigInt(await testee.tokenTotalSupply()) / precision)
   });
