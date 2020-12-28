@@ -42,11 +42,6 @@ task("deploy", "Deploy and verify the contracts")
  * @type import('hardhat/config').HardhatUserConfig
  */
 module.exports = {
-  dependencyCompiler: {
-    paths: [
-      'tellorplayground/contracts/TellorPlayground.sol',
-    ],
-  },
   gasReporter: {
     enabled: (process.env.REPORT_GAS == "true") ? true : false
   },
