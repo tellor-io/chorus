@@ -10,6 +10,23 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 // The contract is also an ERC20 token which holds the collateral currency.
 // It also holds the semi stable token state inside the `token` variable.
 contract Main is ERC20, UsingTellor, Inflation {
+    event CollateralThreshold(uint256);
+    event CollateralPriceAge(uint256);
+    event LiquidationPenatly(uint256);
+    event WithdrawCollateral(
+        address,
+        uint256 collateralAmnt,
+        uint256 collateralUtilization
+    );
+    event WithdrawToken(address, uint256 tokenAmnt, uint256 collateralAmnt);
+    event Liquidate(address, uint256 tokensAmnt, uint256 collateralAmnt);
+    event MintTokens(
+        address,
+        uint256 amount,
+        address to,
+        uint256 collatUtilization
+    );
+
     address public admin = msg.sender;
 
     Token private token;
@@ -89,14 +106,16 @@ contract Main is ERC20, UsingTellor, Inflation {
     // he should be allowed to mint up to the maximum amount based on his collateral deposit share.
     // Otherwise lets say a provider deposits 1ETH and mints all tokens to himself
     // can drain the collateral of all providers.
-    function withdrawCollateral(uint256 amount) external onlyAdmin {
-        _burn(msg.sender, amount);
+    function withdrawCollateral(uint256 withdrawAmount) external onlyAdmin {
+        _burn(msg.sender, withdrawAmount);
+        uint256 collatUtilization = collateralUtilization();
+        emit WithdrawCollateral(msg.sender, withdrawAmount, collatUtilization);
         require(
-            collateralUtilization() < collateralThreshold,
+            collatUtilization < collateralThreshold,
             "collateral utilization above the threshold"
         );
         require(
-            collateralToken.transfer(msg.sender, amount),
+            collateralToken.transfer(msg.sender, withdrawAmount),
             "collateral transfer fails"
         );
     }
@@ -122,14 +141,15 @@ contract Main is ERC20, UsingTellor, Inflation {
         uint256 tsRatio = wdiv(totalSupply(), token.totalSupply());
         uint256 tokensToBurn = token.balanceOf(msg.sender);
         uint256 collatAmt = wmul(tokensToBurn, tsRatio);
-        uint256 collatAmntPenalty =
+        uint256 collatAmntWithPenalty =
             sub(collatAmt, wmul(collatAmt, liquidationPenatly));
 
-        _burn(admin, collatAmntPenalty);
+        _burn(admin, collatAmntWithPenalty);
+        emit Liquidate(msg.sender, tokensToBurn, collatAmntWithPenalty);
         token.burn(msg.sender, tokensToBurn);
 
         require(
-            collateralToken.transfer(msg.sender, collatAmntPenalty),
+            collateralToken.transfer(msg.sender, collatAmntWithPenalty),
             "collateral liquidation transfer fails"
         );
     }
@@ -190,10 +210,12 @@ contract Main is ERC20, UsingTellor, Inflation {
         within100e18Range(value)
     {
         collateralThreshold = value;
+        emit CollateralThreshold(value);
     }
 
     function setCollateralPriceAge(uint256 value) external onlyAdmin {
         collateralPriceAge = value;
+        emit CollateralPriceAge(value);
     }
 
     function setLiquidationPenatly(uint256 value)
@@ -202,14 +224,17 @@ contract Main is ERC20, UsingTellor, Inflation {
         within100e18Range(value)
     {
         liquidationPenatly = value;
+        emit LiquidationPenatly(value);
     }
 
     // The max minted tokens can be up to the max utulization threshold.
     // Noone should be allowed to mint above the utilizationThreshold otherwise can drain the pool.
     function mintToken(uint256 amount, address to) external onlyAdmin {
+        uint256 collatUtilization = collateralUtilization();
+        emit MintTokens(msg.sender, amount, to, collatUtilization);
         token.mint(to, amount);
         require(
-            collateralUtilization() < collateralThreshold,
+            collatUtilization < collateralThreshold,
             "collateral utilization above the threshold"
         );
     }
@@ -234,12 +259,13 @@ contract Main is ERC20, UsingTellor, Inflation {
 
         uint256 collatPrice = collateralPrice();
         uint256 priceRatio = wdiv(tokenPrice(), collatPrice);
-        uint256 amountOfCollateral = wmul(priceRatio, amount);
+        uint256 collateralAmnt = wmul(priceRatio, amount);
 
-        _burn(admin, amountOfCollateral);
+        _burn(admin, collateralAmnt);
+        emit WithdrawToken(msg.sender, amount, collateralAmnt);
 
         require(
-            collateralToken.transfer(msg.sender, amountOfCollateral),
+            collateralToken.transfer(msg.sender, collateralAmnt),
             "collateral transfer fail"
         );
         token.burn(msg.sender, amount);
