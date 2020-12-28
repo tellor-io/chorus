@@ -24,6 +24,7 @@ jobs:
         INFURA_RINKEBY: "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
         INFURA_MAINNET: "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
         PRIVATE_KEY: "00000000000000000000000000000000000000000000000000"
+        REPORT_GAS: "true"
   Linting:
     runs-on: ubuntu-latest
     steps:
