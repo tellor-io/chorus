@@ -46,16 +46,16 @@ contract Main is ERC20, UsingTellor, Inflation {
     address public inflBeneficiary; // Where to send the inflation tokens.
 
     constructor(
+        address payable _tellorAddress,
         address _collateralToken,
         uint256 _collateralID,
         uint256 _collateralPriceGranularity,
-        address _inflBeneficiary,
-        address payable _tellorAddress,
         string memory _collateralName,
         string memory _collateralSymbol,
         string memory _tokenName,
         string memory _tokenSymbol,
-        uint256 _inflRatePerYear
+        uint256 _inflRatePerYear,
+        address _inflBeneficiary
     )
         UsingTellor(_tellorAddress)
         ERC20(_collateralName, _collateralSymbol)

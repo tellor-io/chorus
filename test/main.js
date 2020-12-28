@@ -234,16 +234,16 @@ beforeEach(async function () {
   // Deploy the actual contract to test.
   fact = await ethers.getContractFactory("Main");
   testee = await fact.deploy(
+    tellor.address,
     collateral.address,
     collateralID,
     collateralPriceGranularity,
-    benificiary.address,
-    tellor.address,
     collateralName,
     collateralSymbol,
     tokenName,
     tokenSymbol,
-    BigInt(inflRate)
+    BigInt(inflRate),
+    benificiary.address
   );
   await testee.deployed();
 

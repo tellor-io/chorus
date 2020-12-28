@@ -24,14 +24,15 @@
     "dotenv": "^8.2.0",
     "ethereum-waffle": "^3.2.1",
     "ethers": "^5.0.23",
-    "hardhat": "^2.0.4",
+    "hardhat": "^2.0.6",
     "hardhat-dependency-compiler": "^1.0.0",
     "hardhat-gas-reporter": "^1.0.3",
+    "hardhat-log-remover": "^2.0.0",
     "solidity-coverage": "^0.7.12",
     "tellorplayground": "github:tellor-io/tellorplayground#main"
   },
   "dependencies": {
     "@openzeppelin/contracts": "^3.3.0",
-    "usingtellor": "github:krasi-georgiev/usingtellor#enablie-ci"
+    "usingtellor": "github:tellor-io/usingtellor#master"
   }
 }
