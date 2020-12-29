@@ -9,7 +9,7 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 // The contract is also an ERC20 token which holds the collateral currency.
 // It also holds the semi stable token state inside the `token` variable.
-contract Main is ERC20, UsingTellor, Inflation {
+contract Main is Inflation {
     event CollateralThreshold(uint256);
     event CollateralPriceAge(uint256);
     event LiquidationPenatly(uint256);
@@ -30,7 +30,10 @@ contract Main is ERC20, UsingTellor, Inflation {
     address public admin = msg.sender;
 
     Token private token;
-    uint256 public tknPrice = 1e18;
+    Token private collateral;
+    uint256 private tknPrice = 1e18;
+
+    UsingTellor tellor;
 
     uint256 public collateralID; // The id on Tellor oracle where to check the collateral token price.
     uint256 public collateralPriceGranularity;
@@ -57,8 +60,6 @@ contract Main is ERC20, UsingTellor, Inflation {
         uint256 _inflRatePerYear,
         address _inflBeneficiary
     )
-        UsingTellor(_tellorAddress)
-        ERC20(_collateralName, _collateralSymbol)
         within100e18Range(_inflRatePerYear)
         within1e18Range(_collateralPriceGranularity)
     {
@@ -74,6 +75,9 @@ contract Main is ERC20, UsingTellor, Inflation {
         inflRatePerSec = yearlyRateToPerSec(_inflRatePerYear);
 
         token = new Token(_tokenName, _tokenSymbol);
+        collateral = new Token(_collateralName, _collateralSymbol);
+
+        tellor = new UsingTellor(_tellorAddress);
     }
 
     modifier onlyAdmin {
@@ -93,7 +97,7 @@ contract Main is ERC20, UsingTellor, Inflation {
 
     function depositCollateral(uint256 amount) external onlyAdmin {
         require(amount > 0, "deposit amount 0");
-        _mint(msg.sender, amount);
+        collateral.mint(msg.sender, amount);
         require(
             collateralToken.transferFrom(msg.sender, address(this), amount),
             "failed collateral deposit transfer"
@@ -107,7 +111,7 @@ contract Main is ERC20, UsingTellor, Inflation {
     // Otherwise lets say a provider deposits 1ETH and mints all tokens to himself
     // can drain the collateral of all providers.
     function withdrawCollateral(uint256 withdrawAmount) external onlyAdmin {
-        _burn(msg.sender, withdrawAmount);
+        collateral.burn(msg.sender, withdrawAmount);
         uint256 collatUtilization = collateralUtilization();
         emit WithdrawCollateral(msg.sender, withdrawAmount, collatUtilization);
         require(
@@ -138,13 +142,13 @@ contract Main is ERC20, UsingTellor, Inflation {
             "msg sender doesn't own any tokens"
         );
 
-        uint256 tsRatio = wdiv(totalSupply(), token.totalSupply());
+        uint256 tsRatio = wdiv(collateral.totalSupply(), token.totalSupply());
         uint256 tokensToBurn = token.balanceOf(msg.sender);
         uint256 collatAmt = wmul(tokensToBurn, tsRatio);
         uint256 collatAmntWithPenalty =
             sub(collatAmt, wmul(collatAmt, liquidationPenatly));
 
-        _burn(admin, collatAmntWithPenalty);
+        collateral.burn(admin, collatAmntWithPenalty);
         emit Liquidate(msg.sender, tokensToBurn, collatAmntWithPenalty);
         token.burn(msg.sender, tokensToBurn);
 
@@ -176,12 +180,16 @@ contract Main is ERC20, UsingTellor, Inflation {
     }
 
     function collateralUtilization() public view returns (uint256) {
-        require(totalSupply() > 0, "collateral total supply is zero");
+        require(
+            collateral.totalSupply() > 0,
+            "collateral total supply is zero"
+        );
         if (token.totalSupply() == 0) {
             return 0;
         }
 
-        uint256 collateralValue = wmul(collateralPrice(), totalSupply());
+        uint256 collateralValue =
+            wmul(collateralPrice(), collateral.totalSupply());
 
         uint256 secsPassed = block.timestamp - inflLastUpdate;
         uint256 tokenSupplyWithInflInterest =
@@ -195,7 +203,10 @@ contract Main is ERC20, UsingTellor, Inflation {
     // Returns the collateral price in USD upscaled to e18 precision.
     function collateralPrice() public view returns (uint256) {
         (bool _didGet, uint256 _collateralPrice, ) =
-            getDataBefore(collateralID, block.timestamp - collateralPriceAge);
+            tellor.getDataBefore(
+                collateralID,
+                block.timestamp - collateralPriceAge
+            );
         require(_didGet, "getting oracle price");
         return mul(_collateralPrice, div(1e18, collateralPriceGranularity));
     }
@@ -253,6 +264,14 @@ contract Main is ERC20, UsingTellor, Inflation {
         return token.totalSupply();
     }
 
+    function collateralTotalSupply() external view returns (uint256) {
+        return collateral.totalSupply();
+    }
+
+    function balanceOf(address a) external view returns (uint256) {
+        return collateral.balanceOf(a);
+    }
+
     function withdrawToken(uint256 amount) external {
         require(amount > 0, "amount should be greater than 0");
         require(token.balanceOf(msg.sender) >= amount, "not enough balance");
@@ -261,7 +280,7 @@ contract Main is ERC20, UsingTellor, Inflation {
         uint256 priceRatio = wdiv(tokenPrice(), collatPrice);
         uint256 collateralAmnt = wmul(priceRatio, amount);
 
-        _burn(admin, collateralAmnt);
+        collateral.burn(admin, collateralAmnt);
         emit WithdrawToken(msg.sender, amount, collateralAmnt);
 
         require(

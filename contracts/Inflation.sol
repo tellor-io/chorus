@@ -63,7 +63,7 @@ contract Inflation is DSMath {
         uint256 _principal,
         uint256 _rate,
         uint256 _age
-    ) public pure returns (uint256) {
+    ) internal pure returns (uint256) {
         return rdiv(_principal, rpow(_rate, _age));
     }
 
@@ -71,7 +71,7 @@ contract Inflation is DSMath {
         uint256 _principal,
         uint256 _rate,
         uint256 _age
-    ) public pure returns (uint256) {
+    ) internal pure returns (uint256) {
         return rmul(_principal, rpow(_rate, _age));
     }
 
@@ -88,7 +88,7 @@ contract Inflation is DSMath {
      */
 
     function yearlyRateToPerSec(uint256 _rateWad)
-        public
+        internal
         pure
         returns (uint256)
     {
