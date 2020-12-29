@@ -12,14 +12,15 @@ solhint: ## Run solhint linter.
 	solhint 'contracts/**/*.sol'
 
 deploy-testnet: ## Deploy on the testnet.
+	export $(cat .env | xargs)
 	npx hardhat deploy --network rinkeby \
     --tellor-address 0xfe41cb708cd98c5b20423433309e55b53f79134a\
-    --collateral-address 0xc778417e063141139fce010982780140aa0cd5ab\
-    --collateral-id 1\
-    --collateral-granularity 1000000 \
-    --collateral-name Etherium \
-    --collateral-symbol ETH \
-    --token-name TOKEN \
-    --token-symbol TKN \
-    --infl-rate-per-year 500000000000000000 \
-    --benificiary-address 0x0e93f23278161bCa6F22D6268ca44691042ed437
+    --collateral-address ${COLLATERAL_ADDRESS}\
+    --collateral-id ${COLLATERAL_ID}\
+    --collateral-granularity ${COLLATERAL_GRANULARITY}\
+    --collateral-name ${COLLATERAL_NAME}\
+    --collateral-symbol ${COLLATERAL_SYMBOL}\
+    --token-name ${TOKEN_NAME}\
+    --token-symbol ${TOKEN_SYMBOL}\
+    --infl-rate-per-year ${INFL_RATE_PER_YEAR}\
+    --benificiary-address ${BENIFICIARY_ADDRESS}

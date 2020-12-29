@@ -2,6 +2,7 @@
 
 make help for all commands
 
+see `.env.example` for all required deployment options
 
 For any strange errors
 ```
