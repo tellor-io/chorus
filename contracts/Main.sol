@@ -95,11 +95,11 @@ contract Main is Inflation {
         _;
     }
 
-    function depositCollateral(uint256 amount) external onlyAdmin {
-        require(amount > 0, "deposit amount 0");
-        collateral.mint(msg.sender, amount);
+    function depositCollateral(uint256 wad) external onlyAdmin {
+        require(wad > 0, "deposit amount 0");
+        collateral.mint(msg.sender, wad);
         require(
-            collateralToken.transferFrom(msg.sender, address(this), amount),
+            collateralToken.transferFrom(msg.sender, address(this), wad),
             "failed collateral deposit transfer"
         );
     }
@@ -110,16 +110,16 @@ contract Main is Inflation {
     // he should be allowed to mint up to the maximum amount based on his collateral deposit share.
     // Otherwise lets say a provider deposits 1ETH and mints all tokens to himself
     // can drain the collateral of all providers.
-    function withdrawCollateral(uint256 withdrawAmount) external onlyAdmin {
-        collateral.burn(msg.sender, withdrawAmount);
+    function withdrawCollateral(uint256 wad) external onlyAdmin {
+        collateral.burn(msg.sender, wad);
         uint256 collatUtilization = collateralUtilization();
-        emit WithdrawCollateral(msg.sender, withdrawAmount, collatUtilization);
+        emit WithdrawCollateral(msg.sender, wad, collatUtilization);
         require(
             collatUtilization < collateralThreshold,
             "collateral utilization above the threshold"
         );
         require(
-            collateralToken.transfer(msg.sender, withdrawAmount),
+            collateralToken.transfer(msg.sender, wad),
             "collateral transfer fails"
         );
     }
@@ -215,27 +215,27 @@ contract Main is Inflation {
     // or the collateral provider can set it very low and drain all collateral.
     // Usually the owner should be another contract so that
     // it is allowed to change it only after a vote from the token holders.
-    function setCollateralThreshold(uint256 value)
+    function setCollateralThreshold(uint256 wad)
         external
         onlyAdmin
-        within100e18Range(value)
+        within100e18Range(wad)
     {
-        collateralThreshold = value;
-        emit CollateralThreshold(value);
+        collateralThreshold = wad;
+        emit CollateralThreshold(wad);
     }
 
-    function setCollateralPriceAge(uint256 value) external onlyAdmin {
-        collateralPriceAge = value;
-        emit CollateralPriceAge(value);
+    function setCollateralPriceAge(uint256 wad) external onlyAdmin {
+        collateralPriceAge = wad;
+        emit CollateralPriceAge(wad);
     }
 
-    function setLiquidationPenatly(uint256 value)
+    function setLiquidationPenatly(uint256 wad)
         external
         onlyAdmin
-        within100e18Range(value)
+        within100e18Range(wad)
     {
-        liquidationPenatly = value;
-        emit LiquidationPenatly(value);
+        liquidationPenatly = wad;
+        emit LiquidationPenatly(wad);
     }
 
     // The max minted tokens can be up to the max utulization threshold.
