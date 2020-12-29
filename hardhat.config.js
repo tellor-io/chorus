@@ -3,7 +3,7 @@ require("@nomiclabs/hardhat-etherscan");
 require("dotenv").config();
 require('hardhat-dependency-compiler');
 require("hardhat-gas-reporter");
-
+require('hardhat-log-remover');
 
 task("accounts", "Prints the list of accounts", async () => {
   const accounts = await ethers.getSigners();
@@ -14,15 +14,36 @@ task("accounts", "Prints the list of accounts", async () => {
 });
 
 task("deploy", "Deploy and verify the contracts")
+  .addParam("tellorAddress", "The Tellor oracle address")
+  .addParam("collateralAddress", "The collateral token contract address")
+  .addParam("collateralId", "The collateral token id in the tellor oracle")
+  .addParam("collateralGranularity", "The collateral token granularity in the tellor oracle")
+  .addParam("collateralName", "The collateral name")
+  .addParam("collateralSymbol", "The collateral Symbol")
+  .addParam("tokenName", "The token name")
+  .addParam("tokenSymbol", "The token Symbol")
+  .addParam("inflRatePerYear", "The compound inflation rate per year")
+  .addParam("benificiaryAddress", "The benificiary address")
   .setAction(async taskArgs => {
-    var masterAddress = taskArgs.masterAddress
     await run("compile");
+    await run("remove-logs");
 
     const t = await ethers.getContractFactory("Main");
-    const contract = await t.deploy();
+    const contract = await t.deploy(
+      taskArgs.tellorAddress,
+      taskArgs.collateralAddress,
+      taskArgs.collateralId,
+      taskArgs.collateralGranularity,
+      taskArgs.collateralName,
+      taskArgs.collateralSymbol,
+      taskArgs.tokenName,
+      taskArgs.tokenSymbol,
+      taskArgs.inflRatePerYear,
+      taskArgs.benificiaryAddress
+    );
     await contract.deployed();
-    console.log("contract deployed to:", contract.address);
-    console.log("    transaction hash:", contract.deployTransaction.hash);
+    console.log("contract deployed to:", "https://" + taskArgs.network + ".etherscan.io/address/" + contract.address);
+    console.log("    transaction hash:", "https://" + taskArgs.network + ".etherscan.io/tx/" + contract.deployTransaction.hash);
 
     // Wait for few confirmed transactions.
     // Otherwise the etherscan api doesn't find the deployed contract.
@@ -33,7 +54,18 @@ task("deploy", "Deploy and verify the contracts")
     await run(
       "verify", {
       address: contract.address,
-      constructorArguments: [masterAddress],
+      constructorArguments: [
+        taskArgs.tellorAddress,
+        taskArgs.collateralAddress,
+        taskArgs.collateralId,
+        taskArgs.collateralGranularity,
+        taskArgs.collateralName,
+        taskArgs.collateralSymbol,
+        taskArgs.tokenName,
+        taskArgs.tokenSymbol,
+        taskArgs.inflRatePerYear,
+        taskArgs.benificiaryAddress,
+      ],
     },
     )
   });
