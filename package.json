@@ -32,8 +32,8 @@
   },
   "dependencies": {
     "@openzeppelin/contracts": "^3.3.0",
-    "usingtellor": "github:tellor-io/usingtellor#master",
     "dotenv": "^8.2.0",
-    "ethers": "^5.0.23"
+    "ethers": "^5.0.23",
+    "usingtellor": "github:tellor-io/usingtellor#master"
   }
 }
