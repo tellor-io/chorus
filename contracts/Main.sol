@@ -19,7 +19,12 @@ contract Main is Inflation {
         uint256 collateralUtilization
     );
     event WithdrawToken(address, uint256 tokenAmnt, uint256 collateralAmnt);
-    event Liquidate(address, uint256 tokensAmnt, uint256 collateralAmnt);
+    event Liquidate(
+        address,
+        uint256 tokensAmnt,
+        uint256 collateralAmnt,
+        uint256 collateralPenalty
+    );
     event MintTokens(
         address,
         uint256 amount,
@@ -35,7 +40,7 @@ contract Main is Inflation {
 
     UsingTellor tellor;
 
-    uint256 public collateralID; // The id on Tellor oracle where to check the collateral token price.
+    uint256 public collateralID; // The collateral id used to check the Tellor oracle for its USD price.
     uint256 public collateralPriceGranularity;
     ERC20 public collateralToken;
     uint256 public collateralThreshold = 5e17; // 50%.
@@ -113,6 +118,7 @@ contract Main is Inflation {
     function withdrawCollateral(uint256 wad) external onlyAdmin {
         collateral.burn(msg.sender, wad);
         uint256 collatUtilization = collateralUtilization();
+        // slither-disable-next-line reentrancy-events
         emit WithdrawCollateral(msg.sender, wad, collatUtilization);
         require(
             collatUtilization < collateralThreshold,
@@ -142,26 +148,30 @@ contract Main is Inflation {
             "msg sender doesn't own any tokens"
         );
 
-        uint256 tsRatio = wdiv(collateral.totalSupply(), token.totalSupply());
+        uint256 tknSuplyRatio =
+            wdiv(collateral.totalSupply(), token.totalSupply());
         uint256 tokensToBurn = token.balanceOf(msg.sender);
-        uint256 collatAmt = wmul(tokensToBurn, tsRatio);
-        uint256 collatAmntWithPenalty =
-            sub(collatAmt, wmul(collatAmt, liquidationPenatly));
+        uint256 collatAmt = wmul(tokensToBurn, tknSuplyRatio);
+        uint256 collatPenalty = wmul(collatAmt, liquidationPenatly);
+        uint256 collatAmntMinusPenalty = sub(collatAmt, collatPenalty);
 
-        collateral.burn(admin, collatAmntWithPenalty);
-        emit Liquidate(msg.sender, tokensToBurn, collatAmntWithPenalty);
+        emit Liquidate(msg.sender, tokensToBurn, collatAmt, collatPenalty);
         token.burn(msg.sender, tokensToBurn);
+        collateral.burn(admin, collatAmt);
 
         require(
-            collateralToken.transfer(msg.sender, collatAmntWithPenalty),
+            collateralToken.transfer(msg.sender, collatAmntMinusPenalty),
             "collateral liquidation transfer fails"
+        );
+        require(
+            collateralToken.transfer(inflBeneficiary, collatPenalty),
+            "collateral liquidation penalty transfer fails"
         );
     }
 
     // Reduce token price by the inflation rate,
     // increases the total supply by the inflation rate and
     // sends the new tokens to the inflation beneficiary.
-    // TODO add tests for this.
     // slither-disable-next-line timestamp
     function updateInflation() external {
         uint256 secsPassed = block.timestamp - inflLastUpdate;
@@ -201,6 +211,7 @@ contract Main is Inflation {
     }
 
     // Returns the collateral price in USD upscaled to e18 precision.
+    // slither-disable-next-line timestamp
     function collateralPrice() public view returns (uint256) {
         (bool _didGet, uint256 _collateralPrice, ) =
             tellor.getDataBefore(
@@ -229,13 +240,15 @@ contract Main is Inflation {
         emit CollateralPriceAge(wad);
     }
 
+    // WARNING You would usually want to put this through a vote from the token holders
+    // or the admin can set it at 100% and during liquidation token holders will not receive any collateral.
     function setLiquidationPenatly(uint256 wad)
         external
         onlyAdmin
         within100e18Range(wad)
     {
-        liquidationPenatly = wad;
-        emit LiquidationPenatly(wad);
+        liquidationPenatly = wdiv(wad, 100e18); // Convert to a fraction.
+        emit LiquidationPenatly(liquidationPenatly);
     }
 
     // The max minted tokens can be up to the max utulization threshold.
@@ -243,6 +256,7 @@ contract Main is Inflation {
     function mintToken(uint256 amount, address to) external onlyAdmin {
         token.mint(to, amount);
         uint256 collatUtilization = collateralUtilization();
+        // slither-disable-next-line reentrancy-events
         emit MintTokens(msg.sender, amount, to, collatUtilization);
         require(
             collatUtilization < collateralThreshold,
@@ -268,10 +282,6 @@ contract Main is Inflation {
         return collateral.totalSupply();
     }
 
-    function balanceOf(address a) external view returns (uint256) {
-        return collateral.balanceOf(a);
-    }
-
     function withdrawToken(uint256 amount) external {
         require(amount > 0, "amount should be greater than 0");
         require(token.balanceOf(msg.sender) >= amount, "not enough balance");
@@ -280,14 +290,18 @@ contract Main is Inflation {
         uint256 priceRatio = wdiv(tokenPrice(), collatPrice);
         uint256 collateralAmnt = wmul(priceRatio, amount);
 
-        collateral.burn(admin, collateralAmnt);
         emit WithdrawToken(msg.sender, amount, collateralAmnt);
+        collateral.burn(admin, collateralAmnt);
+        token.burn(msg.sender, amount);
 
         require(
             collateralToken.transfer(msg.sender, collateralAmnt),
             "collateral transfer fail"
         );
-        token.burn(msg.sender, amount);
+    }
+
+    function collateralBalance() external view returns (uint256) {
+        return collateral.balanceOf(admin);
     }
 
     function tokenBalanceOf(address account) external view returns (uint256) {

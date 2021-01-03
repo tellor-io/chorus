@@ -149,11 +149,13 @@ describe("All tests", function () {
 
   it("Liquidation", async function () {
     // Put the system into 40% collateral utilization.
-    let collateralDeposit = 10;
+    let collateralDeposit = 10.0
     await testee.depositCollateral(BigInt(collateralDeposit) * precision)
-    let tokensTotalSupply = 400;
-    await testee.mintToken(BigInt(tokensTotalSupply * 0.4) * precision, acc1.address) // 40% ot the total supply.
-    await testee.mintToken(BigInt(tokensTotalSupply * 0.6) * precision, acc2.address) // 60% ot the total supply.
+    let tokensTotalSupply = 400
+    let acc1TknPercentSupply = 0.4 // 40% ot the total supply.
+    let acc2TknPercentSupply = 0.6 // 60% ot the total supply.
+    await testee.mintToken(BigInt(tokensTotalSupply * acc1TknPercentSupply) * precision, acc1.address)
+    await testee.mintToken(BigInt(tokensTotalSupply * acc2TknPercentSupply) * precision, acc2.address)
 
     // Reduce the collateral price by 50% to put the system into liquation state.
     await tellor.submitValue(collateralID, (collateralPrice / 2) * collateralPriceGranularity)
@@ -161,24 +163,41 @@ describe("All tests", function () {
     await waffle.provider.send("evm_setNextBlockTimestamp", [evmCurrentBlockTime]);
     await waffle.provider.send("evm_mine");
 
-    // This account owns 40% of the total tokens supply so should receive 40% of the collateral.
-    account = acc1
-    expect(await collateral.balanceOf(account.address)).to.equal(0);
+    // The account should receive the collateral liquidation amount
+    // equal to its total supply percent in tokens.
+    let account = acc1
+    expect(await collateral.balanceOf(account.address)).to.equal(0)
+
     await testee.connect(account).liquidate();
-    expect(await collateral.balanceOf(account.address)).to.equal(BigInt(collateralDeposit * 0.4) * precision);
+
+    expect(await collateral.balanceOf(account.address)).to.equal(BigInt(collateralDeposit * acc1TknPercentSupply * Number(precision)));
     expect(await testee.tokenBalanceOf(account.address)).to.equal(0);
-    expect(await testee.balanceOf(owner.address)).to.equal(BigInt(collateralDeposit * 0.6) * precision);
+    expect(await testee.collateralBalance()).to.equal(BigInt(collateralDeposit * (1 - acc1TknPercentSupply) * Number(precision)));
     await expect(testee.connect(account).liquidate()).to.be.reverted
 
 
-    // This account owns 60% of the total tokens supply so should receive 60% of the collateral.
+    // Set liquidation penaly and test that collateral penalty is transfered to the benificiary address.
+    let liquidationPenatly = 0.15 // 15%
+    testee.setLiquidationPenatly(BigInt(liquidationPenatly * 100) * precision)
+
+
+    // The account should receive the collateral liquidation amount 
+    // equal to its total supply percent in tokens minus the liquidation penalty.
     account = acc2
     expect(await collateral.balanceOf(account.address)).to.equal(0);
+    expect(await collateral.balanceOf(benificiary.address)).to.equal(0);
     await testee.connect(account).liquidate();
-    expect(await collateral.balanceOf(account.address)).to.equal(BigInt(collateralDeposit * 0.6) * precision);
+
+    let expAccountCollat = collateralDeposit * (acc2TknPercentSupply - (acc2TknPercentSupply * liquidationPenatly)) * Number(precision)
+    expect(await collateral.balanceOf(account.address)).to.equal(BigInt(expAccountCollat));
     expect(await testee.tokenBalanceOf(account.address)).to.equal(0);
-    expect(await testee.balanceOf(owner.address)).to.equal(0);
+    expect(await testee.collateralBalance()).to.equal(0);
+    // Benificiary address should receive the penalty.
+    let expBenificiaryCollat = (collateralDeposit * acc2TknPercentSupply * liquidationPenatly).toFixed(2) * Number(precision)
+    expect(await collateral.balanceOf(benificiary.address)).to.equal(BigInt(expBenificiaryCollat));
     await expect(testee.connect(account).liquidate()).to.be.reverted
+
+
 
   })
 
@@ -211,7 +230,7 @@ describe("All tests", function () {
       // There is a rounding error so ignore the difference after the rounding error.
       // The total precision is enough that this rounding shouldn't matter.
       expect(actCollateralWithdrawn).to.be.closeTo(expCollateralWithdrawn, 70000000000)
-      expect(Number(await testee.balanceOf(owner.address))).to.be.closeTo(Number(collateralDeposit * precision - BigInt(expCollateralWithdrawn)), 70000000000);
+      expect(Number(await testee.collateralBalance())).to.be.closeTo(Number(collateralDeposit * precision - BigInt(expCollateralWithdrawn)), 70000000000);
     }
 
     await expect(testee.withdrawToken(1n), "withdraw tokens when balance should be zero").to.be.reverted
