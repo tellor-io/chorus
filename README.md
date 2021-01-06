@@ -14,5 +14,5 @@ hardhat compile --force
 
 TODO
 Add to CI 
-    Mythril
-    CodeChecks
+    Mythril - https://github.com/ConsenSys/mythril/issues/1452
+    CodeChecks - Waiting to enable for the private repo.

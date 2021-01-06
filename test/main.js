@@ -97,11 +97,6 @@ describe("All tests", function () {
 
     expect(tokensMinted).to.equal(BigInt(await testee.tokenTotalSupply()) / precision)
 
-
-    evmCurrentBlockTime += 100;
-    await waffle.provider.send("evm_setNextBlockTimestamp", [evmCurrentBlockTime]);
-    await waffle.provider.send("evm_mine");
-
     let totalTokenValue = Number(tokensMinted) * tokenPrice
     let collateralValue = collateralDeposit * BigInt(collateralPrice) * precision
 
@@ -158,7 +153,8 @@ describe("All tests", function () {
     await testee.mintToken(BigInt(tokensTotalSupply * acc2TknPercentSupply) * precision, acc2.address)
 
     // Reduce the collateral price by 50% to put the system into liquation state.
-    await tellor.submitValue(collateralID, (collateralPrice / 2) * collateralPriceGranularity)
+    // Rewind the machine because oracle price needs to be at least collateralPriceAge old.
+    await tellor.submitValue(collateralID, (collateralPrice / 4) * collateralPriceGranularity)
     evmCurrentBlockTime = evmCurrentBlockTime + Number(await testee.collateralPriceAge()) + 100
     await waffle.provider.send("evm_setNextBlockTimestamp", [evmCurrentBlockTime]);
     await waffle.provider.send("evm_mine");
