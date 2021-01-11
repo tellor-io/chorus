@@ -16,7 +16,7 @@ contract Main is Inflation {
     event WithdrawCollateral(
         address,
         uint256 collateralAmnt,
-        uint256 collateralUtilization
+        uint256 collateralRatio
     );
     event WithdrawToken(address, uint256 tokenAmnt, uint256 collateralAmnt);
     event Liquidate(
@@ -29,7 +29,7 @@ contract Main is Inflation {
         address,
         uint256 amount,
         address to,
-        uint256 collatUtilization
+        uint256 collateralRatio
     );
 
     address public admin = msg.sender;
@@ -38,12 +38,12 @@ contract Main is Inflation {
     Token private collateral;
     uint256 private tknPrice = 1e18;
 
-    UsingTellor tellor;
+    UsingTellor private tellor;
 
     uint256 public collateralID; // The collateral id used to check the Tellor oracle for its USD price.
     uint256 public collateralPriceGranularity;
     ERC20 public collateralToken;
-    uint256 public collateralThreshold = 5e17; // 50%.
+    uint256 public collateralThreshold = 15e17; // 150%.
     uint256 public collateralPriceAge = 3600; // 1h.
     uint256 public liquidationPenatly = 0;
 
@@ -117,11 +117,11 @@ contract Main is Inflation {
     // can drain the collateral of all providers.
     function withdrawCollateral(uint256 wad) external onlyAdmin {
         collateral.burn(msg.sender, wad);
-        uint256 collatUtilization = collateralUtilization();
+        uint256 collateralRatio = collateralRatio();
         // slither-disable-next-line reentrancy-events
-        emit WithdrawCollateral(msg.sender, wad, collatUtilization);
+        emit WithdrawCollateral(msg.sender, wad, collateralRatio);
         require(
-            collatUtilization < collateralThreshold,
+            collateralRatio < collateralThreshold,
             "collateral utilization above the threshold"
         );
         require(
@@ -140,7 +140,7 @@ contract Main is Inflation {
     // with penatly 10% sender can withdraw 90 collateral
     function liquidate() external {
         require(
-            collateralUtilization() > collateralThreshold,
+            collateralRatio() > collateralThreshold,
             "collateral utilizatoin is below threshold"
         );
         require(
@@ -189,7 +189,7 @@ contract Main is Inflation {
         token.mint(inflBeneficiary, tokensToMint);
     }
 
-    function collateralUtilization() public view returns (uint256) {
+    function collateralRatio() public view returns (uint256) {
         require(
             collateral.totalSupply() > 0,
             "collateral total supply is zero"
@@ -207,7 +207,7 @@ contract Main is Inflation {
 
         uint256 tokenValue = wmul(tokenPrice(), tokenSupplyWithInflInterest);
 
-        return wdiv(tokenValue, collateralValue);
+        return add(1e18, wdiv(tokenValue, collateralValue));
     }
 
     // Returns the collateral price in USD upscaled to e18 precision.
@@ -255,11 +255,11 @@ contract Main is Inflation {
     // Noone should be allowed to mint above the utilizationThreshold otherwise can drain the pool.
     function mintToken(uint256 amount, address to) external onlyAdmin {
         token.mint(to, amount);
-        uint256 collatUtilization = collateralUtilization();
+        uint256 cRatio = collateralRatio();
         // slither-disable-next-line reentrancy-events
-        emit MintTokens(msg.sender, amount, to, collatUtilization);
+        emit MintTokens(msg.sender, amount, to, cRatio);
         require(
-            collatUtilization < collateralThreshold,
+            cRatio < collateralThreshold,
             "collateral utilization above the threshold"
         );
     }

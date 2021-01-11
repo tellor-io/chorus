@@ -33,7 +33,7 @@ var evmCurrentBlockTime = Math.round((Number(new Date().getTime())) / 1000);
 // https://medium.com/coinmonks/math-in-solidity-part-4-compound-interest-512d9e13041b
 function accrueInflation(principal, secsPassed) {
   let rate = 1 + inflRatePerSec;
-  infl = principal / rate ** secsPassed // The magic formula from https://medium.com/coinmonks/math-in-solidity-part-4-compound-interest-512d9e13041b
+  infl = principal / rate ** secsPassed
 
   return BigInt(infl);
 }
@@ -86,11 +86,11 @@ describe("All tests", function () {
   })
 
 
-  it("Collateral deposit and utilization", async function () {
+  it("Collateral deposit and ratio", async function () {
     let collateralDeposit = 10n;
     await testee.depositCollateral(collateralDeposit * precision)
     expect(await collateral.balanceOf(testee.address)).to.equal(collateralDeposit * precision)
-    expect(await testee.collateralUtilization()).to.equal(0)
+    expect(await testee.collateralRatio()).to.equal(0)
 
     let tokensMinted = 499n;
     await testee.mintToken(tokensMinted * precision, acc1.address)
@@ -100,18 +100,18 @@ describe("All tests", function () {
     let totalTokenValue = Number(tokensMinted) * tokenPrice
     let collateralValue = collateralDeposit * BigInt(collateralPrice) * precision
 
-    let expCollateralUtilization = (totalTokenValue / Number(collateralValue) * 100)
-    let actCollateralUtilization = (Number(await testee.collateralUtilization()) / Number(precision) * 100)
-    expect(expCollateralUtilization).to.equal(actCollateralUtilization)
+    let expcollateralRatio = 100 + (totalTokenValue / Number(collateralValue) * 100)
+    let actcollateralRatio = (Number(await testee.collateralRatio()) / Number(precision) * 100)
+    expect(expcollateralRatio).to.equal(actcollateralRatio)
   });
 
   it("Should not allow minting tokens above the collateral threshold", async function () {
     let collateralDeposit = 10n;
     await testee.depositCollateral(collateralDeposit * precision)
-    expect(await testee.collateralUtilization()).to.equal(0)
+    expect(await testee.collateralRatio()).to.equal(0)
 
     // Collateral price is 100 so 499 minted tokens will put the system
-    // into 49% utilization which is close to the 50% collateral thershold.
+    // into 49% utilization which is close to the default 150% collateral thershold.
     // Collateral total value = 1000(100x10),
     // Tokens total value = 499(499x1).
     let tokensMinted = 499n;
