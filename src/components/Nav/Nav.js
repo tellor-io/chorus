@@ -39,7 +39,7 @@ const Nav = (props) => {
                 <a href="https://tellor.io" target="_blank" rel="noopener noreferrer">
                     <Icons.Github className="Github" fill="white" height="30px" width="30px" />
                 </a>
-                <a href="https://tellor.io" target="_blank" rel="noopener noreferrer">whitepaper</a>
+                <a href="https://docs.tellor.io/chorus/" target="_blank" rel="noopener noreferrer">whitepaper</a>
                 <div onClick={() => handleClick("RefA")}><p>how does it work</p></div>
                 <div onClick={() => handleClick("RefB")}><p>contact</p></div>
             </Menu>
@@ -59,7 +59,7 @@ const Nav = (props) => {
             </div>
             <div className="flexer"></div>
             <div className="Menu_Total">
-                <a href="https://tellor.io" target="_blank" rel="noopener noreferrer">whitepaper</a>
+                <a href="https://docs.tellor.io/chorus/" target="_blank" rel="noopener noreferrer">whitepapereee</a>
                 <div onClick={props.onClickRefA}><p>how does it work</p></div>
                 <div onClick={props.onClickRefB}><p>contact</p></div>
                 <a href="https://tellor.io" target="_blank" rel="noopener noreferrer">

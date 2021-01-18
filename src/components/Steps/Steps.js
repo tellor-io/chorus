@@ -36,7 +36,7 @@ function Steps() {
       <p><span className="bold">Notes</span> are subject to inflation rate, new <span className="bold">Notes</span> are issued to Inflation Beneficiary</p>
       <div className="readwhitepaper">
         <p>Want to know more?</p>
-        <ChorusButton txt={"Read the whitepaper"}/>
+        <ChorusButton txt="Read the whitepaper" link="https://docs.tellor.io/chorus/"/>
       </div>
     </div>
   );

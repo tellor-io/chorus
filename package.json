@@ -1,21 +1,7 @@
 {
   "name": "chorus",
-  "version": "1.0.0",
-  "description": "A protocol for creating stable community currencies",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/tellor-io/chorus.git"
-  },
-  "author": "",
-  "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/tellor-io/chorus/issues"
-  },
-  "homepage": "https://github.com/tellor-io/chorus#readme",
+  "version": "0.1.0",
+  "private": true,
   "devDependencies": {
     "@codechecks/client": "^0.1.10",
     "@nomiclabs/hardhat-ethers": "^2.0.1",
@@ -31,9 +17,57 @@
     "tellorplayground": "github:tellor-io/tellorplayground#main"
   },
   "dependencies": {
+    "@testing-library/jest-dom": "^5.11.4",
+    "@testing-library/react": "^11.1.0",
+    "@testing-library/user-event": "^12.1.10",
+    "antd": "^4.10.2",
+    "node-sass": "4.14.1",
+    "react": "^17.0.1",
+    "react-burger-menu": "^3.0.3",
+    "react-dom": "^17.0.1",
+    "react-responsive": "^8.2.0",
+    "react-router-dom": "^5.2.0",
+    "react-router-hash-link": "^2.3.1",
+    "react-scripts": "4.0.1",
+    "web-vitals": "^0.2.4",
+
     "@openzeppelin/contracts": "^3.3.0",
     "dotenv": "^8.2.0",
     "ethers": "^5.0.23",
     "usingtellor": "github:tellor-io/usingtellor#master"
+
+  },
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "eject": "react-scripts eject"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tellor-io/chorus.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/tellor-io/chorus/issues"
+  },
+  "eslintConfig": {
+    "extends": [
+      "react-app",
+      "react-app/jest"
+    ]
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
   }
 }
