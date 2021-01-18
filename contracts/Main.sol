@@ -117,11 +117,11 @@ contract Main is Inflation {
     // can drain the collateral of all providers.
     function withdrawCollateral(uint256 wad) external onlyAdmin {
         collateral.burn(msg.sender, wad);
-        uint256 collateralRatio = collateralRatio();
+        uint256 cRatio = collateralRatio();
         // slither-disable-next-line reentrancy-events
-        emit WithdrawCollateral(msg.sender, wad, collateralRatio);
+        emit WithdrawCollateral(msg.sender, wad, cRatio);
         require(
-            collateralRatio < collateralThreshold,
+            cRatio < collateralThreshold,
             "collateral utilization above the threshold"
         );
         require(
