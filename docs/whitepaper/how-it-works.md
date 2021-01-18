@@ -2,7 +2,7 @@
 
 ## Technical Details
 
-Chorus is a composable system, with only 6 components to be set by the creator of a smart contract for generating Notes called an Anthem.
+Chorus is a composable system, with only 7 components to be set by the creator of a smart contract for generating Notes called an Anthem.
 
 ### Variables to set:
 
