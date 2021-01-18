@@ -10,11 +10,5 @@
 
 {% page-ref page="critique-and-conclusion.md" %}
 
-
-
 ## \*\*\*\*
-
-
-
-
 
