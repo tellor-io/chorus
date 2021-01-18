@@ -1,0 +1,26 @@
+@import '../../App.scss';
+
+.ChorusButton {
+    @include font;
+    @include flexcolumn;
+    border: 1px solid black;
+    font-size: 1rem !important;
+    font-weight: bold;
+    padding: 18px 22px 0 0 !important;
+    height: auto !important;
+}
+
+.ChorusButton:hover {
+    border: 1px solid black;
+    color: black;
+}
+.ChorusButton:focus {
+    border: 1px solid black;
+    color: black;
+}
+
+
+.ChorusButton span {
+    margin: 0 0 16px 24px;
+    text-align: center;
+}

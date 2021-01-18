@@ -1,0 +1,65 @@
+@import '../../App.scss';
+
+.KeyElements {
+    @include flexcolumn;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 116px 160px 40px 160px;
+    @include sixteenpxfont;
+}
+
+.Element {
+    @include flexrow;
+    width: 100%;
+    margin: 56px 0 0 0;
+
+}
+
+.ElementGraphic {
+    margin: 0 48px 0 0;
+}
+
+.ElementTxt {
+    @include flexcolumn;
+    max-width: 620px;
+}
+.list {
+    width: 100%;
+    @include flexrow;
+
+}
+
+/* QUERIES */
+
+/* Mobile */
+@media only screen and (max-width : 480px) {
+    .KeyElements {
+        @include flexcolumn;
+        width: 100%;
+        box-sizing: border-box;
+        padding: 116px 72px 40px 72px;
+        @include sixteenpxfont;
+    }
+
+    .Element {
+        @include flexcolumn;
+        width: 100%;
+        margin: 20px 0 30px 0;
+    }
+
+    .ElementGraphic {
+        margin: 0 0 20px 0;
+    }
+
+    .list {
+        width: 100%;
+        @include flexcolumn;
+    
+    }
+    .list ul {
+        margin: 0;
+    }
+}
+
+@media only screen and (min-width: 1500px){
+}
