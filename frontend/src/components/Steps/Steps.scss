@@ -1,0 +1,76 @@
+@import '../../App.scss';
+
+/* QUERIES */
+
+.Steps {
+    width: 100%;
+    @include flexcolumn;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    @include sixteenpxfont;
+    margin: 100px 0 0 0;
+}
+
+.Step {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 0;
+    @include flexcolumn;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    border-bottom: 1px solid #E5E5E5;
+    margin: 46px 0 0 0;
+}
+
+.Step p {
+    margin: 0 0 40px 0;
+}
+
+.Step svg {
+    margin: 0 0 -4px 0;
+}
+
+.Steps p:nth-child(6){
+    margin: 46px 0 170px 0;
+    max-width: 432px;
+}
+
+.readwhitepaper {
+    @include flexrow;
+    justify-content: center;
+    align-items: center;
+}
+.readwhitepaper p {
+    margin: 0 40px 0 0;
+
+}
+
+
+/* Mobile */
+@media only screen and (max-width : 480px) {
+    .Steps {
+        margin: 20px 0 0 0;
+    }
+    .Step {
+        width: 100%;
+        box-sizing: border-box;
+        padding: 0 50px;
+    }
+    .readwhitepaper {
+        @include flexcolumn;
+        justify-content: center;
+        align-items: center;
+    }
+    .readwhitepaper p {
+        margin: 0 0 20px 0;
+    }
+    .Steps p:nth-child(6){
+        margin: 46px 0 100px 0;
+        max-width: 70%;
+    }
+}
+
+@media only screen and (min-width: 1500px){
+}

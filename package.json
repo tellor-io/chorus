@@ -4,7 +4,8 @@
   "description": "A protocol for creating stable community currencies",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "npm --prefix frontend start",
+    "build": "npm --prefix frontend run build"
   },
   "repository": {
     "type": "git",
