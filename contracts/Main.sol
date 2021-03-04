@@ -3,7 +3,6 @@ pragma solidity ^0.7.3;
 
 import "usingtellor/contracts/UsingTellor.sol";
 import "./Token.sol";
-import "./Math.sol";
 import "./Inflation.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 

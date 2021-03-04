@@ -31,6 +31,20 @@ contract Inflation is DSMath {
         return mul(_wei, 10**27);
     }
 
+    // The most accurate way to calculate inflation is a loop with
+    // for (let i = 0; i < secsPassed; i++) {
+    //  `tokenPrice -= tokenPrice * inflRatePerSec`
+    // }
+    // but this is too slow and expencive so this is an algorithm that has a very small precision error.
+    // The magic formula from https://medium.com/coinmonks/math-in-solidity-part-4-compound-interest-512d9e13041b
+    function accrueInflation(
+        uint256 _principal,
+        uint256 _rate,
+        uint256 _age
+    ) internal pure returns (uint256) {
+        return rdiv(_principal, rpow(_rate, _age));
+    }
+
     /**
      * @dev Uses an approximation of continuously compounded interest
      * (discretely compounded every second)
@@ -59,14 +73,6 @@ contract Inflation is DSMath {
      * @return The new principal as a wad. Equal to original principal +
      *   interest accrued
      */
-    function accrueInflation(
-        uint256 _principal,
-        uint256 _rate,
-        uint256 _age
-    ) internal pure returns (uint256) {
-        return rdiv(_principal, rpow(_rate, _age));
-    }
-
     function accrueInterest(
         uint256 _principal,
         uint256 _rate,
