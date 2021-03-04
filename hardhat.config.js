@@ -26,7 +26,10 @@ task("deploy", "Deploy and verify the contracts")
   .addParam("benificiaryAddress", "The benificiary address")
   .setAction(async taskArgs => {
     await run("compile");
-    await run("remove-logs");
+
+    if (taskArgs.network == "mainnet") {
+      await run("remove-logs");
+    }
 
     const t = await ethers.getContractFactory("Main");
     const contract = await t.deploy(
@@ -52,7 +55,7 @@ task("deploy", "Deploy and verify the contracts")
 
     console.log('submitting for etherscan verification...');
     await run(
-      "verify", {
+      "verify:verify", {
       address: contract.address,
       constructorArguments: [
         taskArgs.tellorAddress,
