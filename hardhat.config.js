@@ -81,6 +81,7 @@ module.exports = {
     paths: [
       'tellorplayground/contracts/TellorPlayground.sol',
     ],
+    keep: true,
   },
   gasReporter: {
     enabled: (process.env.REPORT_GAS == "true") ? true : false

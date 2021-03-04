@@ -6,13 +6,13 @@ help: ## Displays help.
 
 .PHONY: slither
 slither: ## Run slither security checks.
-	slither . --filter-paths "node_modules/@openzeppelin/contracts/GSN/Context.sol" --exclude naming-convention,solc-version,pragma,external-function
+	slither . --filter-paths "node_modules/*" --exclude naming-convention,solc-version,pragma,external-function
 .PHONY: solhint
 solhint: ## Run solhint linter.
 	solhint 'contracts/**/*.sol'
 
 deploy-testnet: ## Deploy on the testnet.
-	export $(cat .env | xargs)
+	export $(cat .env | xargs) && \
 	npx hardhat deploy --network rinkeby \
     --tellor-address 0xfe41cb708cd98c5b20423433309e55b53f79134a\
     --collateral-address ${COLLATERAL_ADDRESS}\
