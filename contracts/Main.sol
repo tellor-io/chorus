@@ -1,14 +1,18 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.7.3;
 
-import "usingtellor/contracts/UsingTellor.sol";
+import "./Oracle.sol";
 import "./Token.sol";
 import "./Inflation.sol";
+
+import "hardhat/console.sol";
+//OpenZeppelin's ERC20 inherits a contract called Context.sol, which was needed for the GSN(which seems that it failed as a project).
+// While there's nothing wrong with this contract, I don't like to add unecessary stuff.
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 // The contract is also an ERC20 token which holds the collateral currency.
 // It also holds the semi stable token state inside the `token` variable.
-contract Main is Inflation {
+contract Main is Inflation, Oracle, ERC20 {
     event CollateralThreshold(uint256);
     event CollateralPriceAge(uint256);
     event LiquidationPenatly(uint256);
@@ -32,12 +36,7 @@ contract Main is Inflation {
     );
 
     address public admin = msg.sender;
-
-    Token private token;
-    Token private collateral;
     uint256 private tknPrice = 1e18;
-
-    UsingTellor private tellor;
 
     uint256 public collateralID; // The collateral id used to check the Tellor oracle for its USD price.
     uint256 public collateralPriceGranularity;
@@ -57,13 +56,13 @@ contract Main is Inflation {
         address _collateralToken,
         uint256 _collateralID,
         uint256 _collateralPriceGranularity,
-        string memory _collateralName,
-        string memory _collateralSymbol,
         string memory _tokenName,
         string memory _tokenSymbol,
         uint256 _inflRatePerYear,
         address _inflBeneficiary
     )
+        Oracle(_tellorAddress)
+        ERC20(_tokenName, _tokenSymbol)
         within100e18Range(_inflRatePerYear)
         within1e18Range(_collateralPriceGranularity)
     {
@@ -77,11 +76,6 @@ contract Main is Inflation {
         require(_inflBeneficiary != address(0), "benificiary address not set");
         inflBeneficiary = _inflBeneficiary;
         inflRatePerSec = yearlyRateToPerSec(_inflRatePerYear);
-
-        token = new Token(_tokenName, _tokenSymbol);
-        collateral = new Token(_collateralName, _collateralSymbol);
-
-        tellor = new UsingTellor(_tellorAddress);
     }
 
     modifier onlyAdmin {
@@ -101,7 +95,6 @@ contract Main is Inflation {
 
     function depositCollateral(uint256 wad) external onlyAdmin {
         require(wad > 0, "deposit amount 0");
-        collateral.mint(msg.sender, wad);
         require(
             collateralToken.transferFrom(msg.sender, address(this), wad),
             "failed collateral deposit transfer"
@@ -115,17 +108,17 @@ contract Main is Inflation {
     // Otherwise lets say a provider deposits 1ETH and mints all tokens to himself
     // can drain the collateral of all providers.
     function withdrawCollateral(uint256 wad) external onlyAdmin {
-        collateral.burn(msg.sender, wad);
+        // This can open to reentrancy if token is the type that allow execution on receive(ERC777, for example)
+        require(
+            collateralToken.transfer(msg.sender, wad),
+            "collateral transfer fails"
+        );
         uint256 cRatio = collateralRatio();
         // slither-disable-next-line reentrancy-events
         emit WithdrawCollateral(msg.sender, wad, cRatio);
         require(
             cRatio < collateralThreshold,
             "collateral utilization above the threshold"
-        );
-        require(
-            collateralToken.transfer(msg.sender, wad),
-            "collateral transfer fails"
         );
     }
 
@@ -142,26 +135,22 @@ contract Main is Inflation {
             collateralRatio() > collateralThreshold,
             "collateral utilizatoin is below threshold"
         );
-        require(
-            token.balanceOf(msg.sender) > 0,
-            "msg sender doesn't own any tokens"
-        );
+        require(balanceOf(msg.sender) > 0, "msg sender doesn't own any tokens");
 
         uint256 tknSuplyRatio =
-            wdiv(collateral.totalSupply(), token.totalSupply());
-        uint256 tokensToBurn = token.balanceOf(msg.sender);
+            wdiv(collateralToken.balanceOf(address(this)), totalSupply());
+        uint256 tokensToBurn = balanceOf(msg.sender);
         uint256 collatAmt = wmul(tokensToBurn, tknSuplyRatio);
         uint256 collatPenalty = wmul(collatAmt, liquidationPenatly);
         uint256 collatAmntMinusPenalty = sub(collatAmt, collatPenalty);
 
         emit Liquidate(msg.sender, tokensToBurn, collatAmt, collatPenalty);
-        token.burn(msg.sender, tokensToBurn);
-        collateral.burn(admin, collatAmt);
-
+        _burn(msg.sender, tokensToBurn);
         require(
             collateralToken.transfer(msg.sender, collatAmntMinusPenalty),
             "collateral liquidation transfer fails"
         );
+        // I don't think this makes sense
         require(
             collateralToken.transfer(inflBeneficiary, collatPenalty),
             "collateral liquidation penalty transfer fails"
@@ -181,28 +170,28 @@ contract Main is Inflation {
 
         uint256 tokensToMint =
             sub(
-                accrueInterest(token.totalSupply(), inflRatePerSec, secsPassed),
-                token.totalSupply()
+                accrueInterest(totalSupply(), inflRatePerSec, secsPassed),
+                totalSupply()
             );
 
-        token.mint(inflBeneficiary, tokensToMint);
+        _mint(inflBeneficiary, tokensToMint);
     }
 
     function collateralRatio() public view returns (uint256) {
         require(
-            collateral.totalSupply() > 0,
+            collateralToken.balanceOf(address(this)) > 0,
             "collateral total supply is zero"
         );
-        if (token.totalSupply() == 0) {
+        if (totalSupply() == 0) {
             return 0;
         }
 
         uint256 collateralValue =
-            wmul(collateralPrice(), collateral.totalSupply());
+            wmul(collateralPrice(), collateralToken.balanceOf(address(this)));
 
         uint256 secsPassed = block.timestamp - inflLastUpdate;
         uint256 tokenSupplyWithInflInterest =
-            accrueInterest(token.totalSupply(), inflRatePerSec, secsPassed);
+            accrueInterest(totalSupply(), inflRatePerSec, secsPassed);
 
         uint256 tokenValue = wmul(tokenPrice(), tokenSupplyWithInflInterest);
 
@@ -213,10 +202,7 @@ contract Main is Inflation {
     // slither-disable-next-line timestamp
     function collateralPrice() public view returns (uint256) {
         (bool _didGet, uint256 _collateralPrice, ) =
-            tellor.getDataBefore(
-                collateralID,
-                block.timestamp - collateralPriceAge
-            );
+            _getDataBefore(collateralID, block.timestamp - collateralPriceAge);
         require(_didGet, "getting oracle price");
         return mul(_collateralPrice, div(1e18, collateralPriceGranularity));
     }
@@ -253,7 +239,7 @@ contract Main is Inflation {
     // The max minted tokens can be up to the max utulization threshold.
     // Noone should be allowed to mint above the utilizationThreshold otherwise can drain the pool.
     function mintToken(uint256 amount, address to) external onlyAdmin {
-        token.mint(to, amount);
+        _mint(to, amount);
         uint256 cRatio = collateralRatio();
         // slither-disable-next-line reentrancy-events
         emit MintTokens(msg.sender, amount, to, cRatio);
@@ -273,37 +259,24 @@ contract Main is Inflation {
             );
     }
 
-    function tokenTotalSupply() external view returns (uint256) {
-        return token.totalSupply();
-    }
-
-    function collateralTotalSupply() external view returns (uint256) {
-        return collateral.totalSupply();
+    function collateralBalance() external view returns (uint256) {
+        return collateralToken.balanceOf(address(this));
     }
 
     function withdrawToken(uint256 amount) external {
         require(amount > 0, "amount should be greater than 0");
-        require(token.balanceOf(msg.sender) >= amount, "not enough balance");
+        require(balanceOf(msg.sender) >= amount, "not enough balance");
 
         uint256 collatPrice = collateralPrice();
         uint256 priceRatio = wdiv(tokenPrice(), collatPrice);
         uint256 collateralAmnt = wmul(priceRatio, amount);
 
         emit WithdrawToken(msg.sender, amount, collateralAmnt);
-        collateral.burn(admin, collateralAmnt);
-        token.burn(msg.sender, amount);
+        _burn(msg.sender, amount);
 
         require(
             collateralToken.transfer(msg.sender, collateralAmnt),
             "collateral transfer fail"
         );
-    }
-
-    function collateralBalance() external view returns (uint256) {
-        return collateral.balanceOf(admin);
-    }
-
-    function tokenBalanceOf(address account) external view returns (uint256) {
-        return token.balanceOf(account);
     }
 }

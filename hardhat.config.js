@@ -90,14 +90,14 @@ module.exports = {
   networks: {
     hardhat: {
     },
-    rinkeby: {
-      url: `https://rinkeby.infura.io/v3/${process.env.INFURA_RINKEBY}`,
-      accounts: [process.env.PRIVATE_KEY]
-    },
-    mainnet: {
-      url: `https://mainnet.infura.io/v3/${process.env.INFURA_MAINNET}`,
-      accounts: [process.env.PRIVATE_KEY]
-    }
+    // rinkeby: {
+    //   url: `https://rinkeby.infura.io/v3/${process.env.INFURA_RINKEBY}`,
+    //   accounts: [process.env.PRIVATE_KEY]
+    // },
+    // mainnet: {
+    //   url: `https://mainnet.infura.io/v3/${process.env.INFURA_MAINNET}`,
+    //   accounts: [process.env.PRIVATE_KEY]
+    // }
   },
   etherscan: {
     // Your API key for Etherscan
