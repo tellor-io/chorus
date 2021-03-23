@@ -1,4 +1,6 @@
 const { expect } = require("chai");
+const { log } = require("console");
+const { default: Decimal } = require("decimal.js");
 const path = require("path")
 
 let owner, acc1, acc2, acc3, acc4, benificiary;
@@ -31,8 +33,8 @@ var evmCurrentBlockTime = Math.round((Number(new Date().getTime())) / 1000);
 // but this is too slow so will an algorithm that has a very small precision error.
 // div(_principal, pow(1+_rate, _age));
 // https://medium.com/coinmonks/math-in-solidity-part-4-compound-interest-512d9e13041b
-function accrueInflation(principal, secsPassed) {
-  let rate = 1 + inflRatePerSec;
+function accrueInflation(principal, secsPassed,inflPerSec = inflRatePerSec) {
+  let rate = 1 + inflPerSec;
   infl = principal / rate ** secsPassed
 
   return BigInt(infl);
@@ -45,23 +47,64 @@ function accrueInterest(principal, secsPassed) {
   return BigInt(interest - principal);
 }
 
+
+function nominalToEffectiveInflation(nominal) {
+  let secondsInaYear = new Decimal(secsPerYear)
+
+  let base = new Decimal(1.0).add(nominal.div(secondsInaYear))
+  let j = base.pow(secondsInaYear)
+  let k = j.sub(new Decimal(1.0))
+  return k
+}
+
+
 describe("All tests", function () {
   it("Token Inflation", async function () {
     let collateralDeposit = 10n;
     await testee.depositCollateral(collateralDeposit * precision)
-
     let mintedTokens = 100n * precision
     await testee.mintToken(mintedTokens, acc1.address)
     evmCurrentBlockTime += secsPerYear;
     await waffle.provider.send("evm_setNextBlockTimestamp", [evmCurrentBlockTime]);
     await waffle.provider.send("evm_mine");
     let secsPassed = evmCurrentBlockTime - Number(await testee.inflLastUpdate())
-
     let actPrice = Number(await testee.tokenPrice())
     let expPrice = Number(accrueInflation(tokenPrice, secsPassed))
     // There is a rounding error so ignore the difference after the rounding error.
     // The total precision is enough that this rounding shouldn't matter.
     expect(expPrice).to.be.closeTo(actPrice, 1500000000)
+  });
+
+  it("Effective Rate", async function () {
+    fact = await ethers.getContractFactory("Main");
+    let effRate = nominalToEffectiveInflation(new Decimal(0.1)) //10%
+    let infRate = new Decimal(effRate).mul(1e18)
+    testee = await fact.deploy(
+      tellor.address,
+      collateral.address,
+      collateralID,
+      collateralPriceGranularity,
+      tokenName,
+      tokenSymbol,
+      BigInt(Math.floor(infRate)),
+      benificiary.address
+    );
+    await testee.deployed();
+    await collateral.increaseAllowance(testee.address, BigInt(1e50));
+    let collateralDeposit = 10n;
+    await testee.depositCollateral(collateralDeposit * precision)
+    const inflRPerSec = (infRate / 1e10) / (secsPerYear * 10e7)
+    let mintedTokens = 100n * precision
+    await testee.mintToken(mintedTokens, acc1.address)
+    evmCurrentBlockTime += secsPerYear;
+    await waffle.provider.send("evm_setNextBlockTimestamp", [evmCurrentBlockTime]);
+    await waffle.provider.send("evm_mine");
+    let secsPassed = evmCurrentBlockTime - Number(await testee.inflLastUpdate())
+    let actPrice = Number(await testee.tokenPrice())
+    let expPrice = Number(accrueInflation(tokenPrice, secsPassed, inflRPerSec))
+    // There is a rounding error so ignore the difference after the rounding error.
+    // The total precision is enough that this rounding shouldn't matter.
+    expect(expPrice).to.be.closeTo(actPrice, 150000000000)
   });
 
   it("Minting tokens to the inflation beneficiary", async function () {
@@ -232,6 +275,7 @@ describe("All tests", function () {
     await expect(testee.withdrawToken(1n), "withdraw tokens when balance should be zero").to.be.reverted
   })
 });
+
 
 // `beforeEach` will run before each test, re-deploying the contract every
 // time. It receives a callback, which can be async.
