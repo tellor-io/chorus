@@ -25,6 +25,7 @@ contract Oracle {
         tellor = ITellor(_tellor);
     }
 
+    // solhint-disable-next-line
     function _getIndexForDataBefore(uint256 _requestId, uint256 _timestamp)
         internal
         view
