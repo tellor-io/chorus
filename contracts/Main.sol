@@ -6,9 +6,10 @@ import "./Token.sol";
 import "./Inflation.sol";
 
 import "hardhat/console.sol";
+
 //OpenZeppelin's ERC20 inherits a contract called Context.sol, which was needed for the GSN(which seems that it failed as a project).
 // While there's nothing wrong with this contract, I don't like to add unecessary stuff.
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+// import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 // The contract is also an ERC20 token which holds the collateral currency.
 // It also holds the semi stable token state inside the `token` variable.
@@ -108,17 +109,20 @@ contract Main is Inflation, Oracle, ERC20 {
     // Otherwise lets say a provider deposits 1ETH and mints all tokens to himself
     // can drain the collateral of all providers.
     function withdrawCollateral(uint256 wad) external onlyAdmin {
-        // This can open to reentrancy if token is the type that allow execution on receive(ERC777, for example)
-        require(
-            collateralToken.transfer(msg.sender, wad),
-            "collateral transfer fails"
-        );
-        uint256 cRatio = collateralRatio();
+        uint256 cRatio =
+            _collateralRatio(
+                sub(collateralToken.balanceOf(address(this)), wad),
+                totalSupply()
+            );
         // slither-disable-next-line reentrancy-events
         emit WithdrawCollateral(msg.sender, wad, cRatio);
         require(
             cRatio < collateralThreshold,
             "collateral utilization above the threshold"
+        );
+        require(
+            collateralToken.transfer(msg.sender, wad),
+            "collateral transfer fails"
         );
     }
 
@@ -150,7 +154,6 @@ contract Main is Inflation, Oracle, ERC20 {
             collateralToken.transfer(msg.sender, collatAmntMinusPenalty),
             "collateral liquidation transfer fails"
         );
-        // I don't think this makes sense
         require(
             collateralToken.transfer(inflBeneficiary, collatPenalty),
             "collateral liquidation penalty transfer fails"
@@ -178,20 +181,28 @@ contract Main is Inflation, Oracle, ERC20 {
     }
 
     function collateralRatio() public view returns (uint256) {
-        require(
-            collateralToken.balanceOf(address(this)) > 0,
-            "collateral total supply is zero"
-        );
-        if (totalSupply() == 0) {
+        return
+            _collateralRatio(
+                collateralToken.balanceOf(address(this)),
+                totalSupply()
+            );
+    }
+
+    function _collateralRatio(uint256 _collateralBalance, uint256 _totalSupply)
+        internal
+        view
+        returns (uint256)
+    {
+        require(_collateralBalance > 0, "collateral total supply is zero");
+        if (_totalSupply == 0) {
             return 0;
         }
 
-        uint256 collateralValue =
-            wmul(collateralPrice(), collateralToken.balanceOf(address(this)));
+        uint256 collateralValue = wmul(collateralPrice(), _collateralBalance);
 
         uint256 secsPassed = block.timestamp - inflLastUpdate;
         uint256 tokenSupplyWithInflInterest =
-            accrueInterest(totalSupply(), inflRatePerSec, secsPassed);
+            accrueInterest(_totalSupply, inflRatePerSec, secsPassed);
 
         uint256 tokenValue = wmul(tokenPrice(), tokenSupplyWithInflInterest);
 
