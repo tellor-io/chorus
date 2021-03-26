@@ -13,11 +13,14 @@ const collateralPrice = 100;
 const tokenName = "Note";
 const tokenSymbol = "NTO";
 
-const inflRate = 5e17; // 50% compound inflation per year.
-const tokenPrice = 1e18;
-
 const secsPerYear = 365 * 24 * 60 * 60
+
+const effRate = nominalToEffectiveInflation(new Decimal(0.5)) //50%
+const inflRate = new Decimal(effRate).mul(1e18)
 const inflRatePerSec = ((inflRate / 1e10) / (secsPerYear * 10e7))
+
+// const inflRate = 5e17; // 50% compound inflation per year.
+const tokenPrice = 1e18;
 
 var evmCurrentBlockTime = Math.round((Number(new Date().getTime())) / 1000);
 
@@ -71,24 +74,24 @@ describe("All tests", function () {
   });
 
   it("Effective Rate", async function () {
-    fact = await ethers.getContractFactory("Chorus");
-    let effRate = nominalToEffectiveInflation(new Decimal(0.1)) //10%
-    let infRate = new Decimal(effRate).mul(1e18)
-    testee = await fact.deploy(
-      oracle.address,
-      collateral.address,
-      collateralID,
-      collateralPriceGranularity,
-      tokenName,
-      tokenSymbol,
-      BigInt(Math.floor(infRate)),
-      benificiary.address
-    );
-    await testee.deployed();
+    // fact = await ethers.getContractFactory("Chorus");
+    // let effRate = nominalToEffectiveInflation(new Decimal(0.1)) //10%
+    // let infRate = new Decimal(effRate).mul(1e18)
+    // testee = await fact.deploy(
+    //   oracle.address,
+    //   collateral.address,
+    //   collateralID,
+    //   collateralPriceGranularity,
+    //   tokenName,
+    //   tokenSymbol,
+    //   BigInt(Math.floor(infRate)),
+    //   benificiary.address
+    // );
+    // await testee.deployed();
     await collateral.increaseAllowance(testee.address, BigInt(1e50));
     let collateralDeposit = 10n;
     await testee.depositCollateral(collateralDeposit * precision)
-    const inflRPerSec = (infRate / 1e10) / (secsPerYear * 10e7)
+    // const inflRPerSec = (inflRate / 1e10) / (secsPerYear * 10e7)
     let mintedTokens = 100n * precision
     await testee.mintToken(mintedTokens, acc1.address)
     evmCurrentBlockTime += secsPerYear;
@@ -96,7 +99,7 @@ describe("All tests", function () {
     await waffle.provider.send("evm_mine");
     let secsPassed = evmCurrentBlockTime - Number(await testee.inflLastUpdate())
     let actPrice = Number(await testee.tokenPrice())
-    let expPrice = Number(accrueInflation(tokenPrice, secsPassed, inflRPerSec))
+    let expPrice = Number(accrueInflation(tokenPrice, secsPassed, inflRatePerSec))
     // There is a rounding error so ignore the difference after the rounding error.
     // The total precision is enough that this rounding shouldn't matter.
     expect(expPrice).to.be.closeTo(actPrice, 150000000000)
@@ -120,7 +123,7 @@ describe("All tests", function () {
     let actInflBeneficiaryTokens = Number(await testee.balanceOf(benificiary.address))
     // There is a rounding error so ignore the difference after the rounding error.
     // The total precision is enough that this rounding shouldn't matter.
-    expect(actInflBeneficiaryTokens).to.be.closeTo(expInflBeneficiaryTokens, 5000000000000)
+    expect(actInflBeneficiaryTokens).to.be.closeTo(expInflBeneficiaryTokens, 20000000000000)
   })
 
 
@@ -310,7 +313,7 @@ const setupTest = deployments.createFixture(async ({ deployments, getNamedAccoun
       collateralPriceGranularity,
       tokenName,
       tokenSymbol,
-      inflRate.toString(),
+      BigInt(Math.floor(inflRate)).toString(),
       benificiary.address
     ],
   });
