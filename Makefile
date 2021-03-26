@@ -10,17 +10,3 @@ slither: ## Run slither security checks.
 .PHONY: solhint
 solhint: ## Run solhint linter.
 	solhint 'contracts/**/*.sol'
-
-deploy-testnet: ## Deploy on the testnet.
-	export $(cat .env | xargs) && \
-	npx hardhat deploy --network rinkeby \
-    --tellor-address 0xfe41cb708cd98c5b20423433309e55b53f79134a\
-    --collateral-address ${COLLATERAL_ADDRESS}\
-    --collateral-id ${COLLATERAL_ID}\
-    --collateral-granularity ${COLLATERAL_GRANULARITY}\
-    --collateral-name ${COLLATERAL_NAME}\
-    --collateral-symbol ${COLLATERAL_SYMBOL}\
-    --token-name ${TOKEN_NAME}\
-    --token-symbol ${TOKEN_SYMBOL}\
-    --infl-rate-per-year ${INFL_RATE_PER_YEAR}\
-    --benificiary-address ${BENIFICIARY_ADDRESS}

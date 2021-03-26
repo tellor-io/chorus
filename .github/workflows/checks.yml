@@ -21,8 +21,8 @@ jobs:
       env:
         # These are not needed for the tests but
         # hardhat fails to start if not present.
-        INFURA_RINKEBY: "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-        INFURA_MAINNET: "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+        NORE_TEST: "x"
+        NORE_MAIN: "x"
         PRIVATE_KEY: "00000000000000000000000000000000000000000000000000"
         REPORT_GAS: "true"
   Linting:
@@ -54,6 +54,6 @@ jobs:
           # These are not needed for the tests but
           # slither runs hardhat to compile the contracts and
           # hardhat compilation fails if these are not present.
-          INFURA_RINKEBY: "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-          INFURA_MAINNET: "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+          NORE_TEST: "x"
+          NORE_MAIN: "x"
           PRIVATE_KEY: "00000000000000000000000000000000000000000000000000"
