@@ -96,9 +96,9 @@ contract MockOracle {
     string private _symbol;
     uint8 private _decimals;
 
-    constructor(string memory name, string memory symbol) {
-        _name = name;
-        _symbol = symbol;
+    constructor() {
+        _name = "Tribute";
+        _symbol = "TRB";
         _decimals = 18;
     }
 

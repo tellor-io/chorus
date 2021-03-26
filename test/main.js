@@ -1,7 +1,5 @@
 const { expect } = require("chai");
-const { log } = require("console");
 const { default: Decimal } = require("decimal.js");
-const path = require("path")
 
 let owner, acc1, acc2, acc3, acc4, benificiary;
 let collateral;
@@ -13,8 +11,6 @@ const precision = BigInt(1e18);
 const collateralID = 1;
 const collateralPriceGranularity = 1e6;
 const collateralPrice = 100;
-const collateralName = "Etherium";
-const collateralSymbol = "ETH";
 const tokenName = "Note";
 const tokenSymbol = "NTO";
 
@@ -280,35 +276,45 @@ describe("All tests", function () {
 // `beforeEach` will run before each test, re-deploying the contract every
 // time. It receives a callback, which can be async.
 beforeEach(async function () {
-  // Using deployments.createFixture speeds up the tests as 
-  // the reset is done with evm_revert.
-  await setupTest()
-});
+  //   // Using deployments.createFixture speeds up the tests as
+  //   // the reset is done with evm_revert.
+  //   await setupTest()
+  // });
 
-const setupTest = deployments.createFixture(async ({ deployments, getNamedAccounts, ethers }, options) => {
+  // const setupTest = deployments.createFixture(async ({ deployments, getNamedAccounts, ethers }, options) => {
   [owner, acc1, acc2, acc3, acc4, benificiary] = await ethers.getSigners();
 
-  oracle = await deployments.deploy('MockOracle', {
-    from: owner,
+  await deployments.deploy('MockOracle', {
+    from: owner.address,
   });
+  oracle = await ethers.getContract('MockOracle')
 
-  var fact = await ethers.getContractFactory("Token");
-  collateral = await fact.deploy("Ethereum", "ETH");
-  await collateral.deployed();
+  await deployments.deploy('Token', {
+    from: owner.address,
+    args: [
+      "Ethereum",
+      "ETH"
+    ],
+  });
+  collateral = await ethers.getContract('Token')
 
   // Deploy the actual contract to test.
-  fact = await ethers.getContractFactory("Chorus");
-  testee = await fact.deploy(
-    oracle.address,
-    collateral.address,
-    collateralID,
-    collateralPriceGranularity,
-    tokenName,
-    tokenSymbol,
-    BigInt(inflRate),
-    benificiary.address
-  );
-  await testee.deployed();
+  await deployments.deploy('Chorus', {
+    from: owner.address,
+    args: [
+      oracle.address,
+      collateral.address,
+      collateralID,
+      collateralPriceGranularity,
+      tokenName,
+      tokenSymbol,
+      inflRate.toString(),
+      benificiary.address
+    ],
+  });
+  testee = await ethers.getContract('Chorus')
+
+
 
   // Prepare the initial state of the contracts.
 
