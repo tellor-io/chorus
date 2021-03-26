@@ -3,7 +3,6 @@ const { default: Decimal } = require("decimal.js");
 
 let owner, acc1, acc2, acc3, acc4, benificiary;
 let collateral;
-
 let testee;
 let oracle;
 
@@ -121,7 +120,7 @@ describe("All tests", function () {
     let actInflBeneficiaryTokens = Number(await testee.balanceOf(benificiary.address))
     // There is a rounding error so ignore the difference after the rounding error.
     // The total precision is enough that this rounding shouldn't matter.
-    expect(actInflBeneficiaryTokens).to.be.closeTo(expInflBeneficiaryTokens, 4000000000000)
+    expect(actInflBeneficiaryTokens).to.be.closeTo(expInflBeneficiaryTokens, 5000000000000)
   })
 
 
@@ -276,34 +275,37 @@ describe("All tests", function () {
 // `beforeEach` will run before each test, re-deploying the contract every
 // time. It receives a callback, which can be async.
 beforeEach(async function () {
-  //   // Using deployments.createFixture speeds up the tests as
-  //   // the reset is done with evm_revert.
-  //   await setupTest()
-  // });
+  // Using deployments.createFixture speeds up the tests as
+  // the reset is done with evm_revert.
+  let res = await setupTest()
+  oracle = res.oracle
+  collateral = res.collateral
+  testee = res.testee
+});
 
-  // const setupTest = deployments.createFixture(async ({ deployments, getNamedAccounts, ethers }, options) => {
+const setupTest = deployments.createFixture(async ({ deployments, getNamedAccounts, ethers }, options) => {
   [owner, acc1, acc2, acc3, acc4, benificiary] = await ethers.getSigners();
 
-  await deployments.deploy('MockOracle', {
+  let oracleDepl = await deployments.deploy('MockOracle', {
     from: owner.address,
-  });
-  oracle = await ethers.getContract('MockOracle')
+  })
+  let oracle = await ethers.getContract("MockOracle");
 
-  await deployments.deploy('Token', {
+  let collateralDepl = await deployments.deploy('Token', {
     from: owner.address,
     args: [
       "Ethereum",
       "ETH"
     ],
-  });
-  collateral = await ethers.getContract('Token')
+  })
+  let collateral = await ethers.getContract("Token");
 
   // Deploy the actual contract to test.
   await deployments.deploy('Chorus', {
     from: owner.address,
     args: [
-      oracle.address,
-      collateral.address,
+      oracleDepl.address,
+      collateralDepl.address,
       collateralID,
       collateralPriceGranularity,
       tokenName,
@@ -312,9 +314,7 @@ beforeEach(async function () {
       benificiary.address
     ],
   });
-  testee = await ethers.getContract('Chorus')
-
-
+  let testee = await ethers.getContract("Chorus");
 
   // Prepare the initial state of the contracts.
 
@@ -327,4 +327,5 @@ beforeEach(async function () {
   await collateral.mint(owner.address, 10n * precision)
   await collateral.increaseAllowance(testee.address, BigInt(1e50));
 
+  return { oracle, collateral, testee }
 });

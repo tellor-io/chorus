@@ -3,7 +3,7 @@ require("dotenv").config();
 require("hardhat-gas-reporter");
 require('hardhat-log-remover');
 require('hardhat-deploy');
-
+require("hardhat-deploy-ethers");
 
 task("accounts", "Prints the list of accounts", async () => {
   const accounts = await ethers.getSigners();
