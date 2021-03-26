@@ -7,9 +7,6 @@ import "./Inflation.sol";
 
 import "hardhat/console.sol";
 
-//OpenZeppelin's ERC20 inherits a contract called Context.sol, which was needed for the GSN(which seems that it failed as a project).
-// While there's nothing wrong with this contract, I don't like to add unecessary stuff.
-// import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 // The contract is also an ERC20 token which holds the collateral currency.
 // It also holds the semi stable token state inside the `token` variable.
