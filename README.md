@@ -1,5 +1,5 @@
 #### Deploy and verify
 
-hardhat --network name deploy
+hardhat --network <networkName> deploy
 
-hardhat --network name etherscan-verify --api-key ......
+hardhat --network <networkName> etherscan-verify --api-key <api-key>

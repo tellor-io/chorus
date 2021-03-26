@@ -24,12 +24,12 @@ module.exports = {
     hardhat: {
     },
     test: {
-      url: `${process.env.NORE_TEST}`,
+      url: `${process.env.NODE_TEST}`,
       accounts: [process.env.PRIVATE_KEY],
       explorer: "http://rinkeby.etherscan.io/address/",
     },
     main: {
-      url: `${process.env.NORE_MAIN}`,
+      url: `${process.env.NODE_MAIN}`,
       accounts: [process.env.PRIVATE_KEY]
     },
     maticTest: {
@@ -60,9 +60,6 @@ module.exports = {
     compilers: [
       {
         version: "0.7.3"
-      },
-      {
-        version: "0.7.0",
       }
     ]
   },

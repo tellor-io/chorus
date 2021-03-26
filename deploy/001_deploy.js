@@ -14,12 +14,12 @@ const func = async function (hre) {
         await run("remove-logs");
     }
 
-    const contract = await deploy('Main', {
+    const contract = await deploy('Chorus', {
         from: deployer,
         log: true,
         deterministicDeployment: true,
         args: [
-            process.env.ORACLE_ADDRESS,
+            "0x88dF592F8eb5D7Bd38bFeF7dEb0fBc02cf3778a0", // The oracle address.
             process.env.COLLATERAL_ADDRESS,
             process.env.COLLATERAL_ID,
             process.env.COLLATERAL_GRANULARITY,
@@ -36,4 +36,4 @@ const func = async function (hre) {
 };
 
 module.exports = func;
-func.tags = ['Main'];
+func.tags = ['Chorus'];
