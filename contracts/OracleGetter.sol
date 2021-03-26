@@ -18,7 +18,7 @@ interface ITellor {
         returns (uint256);
 }
 
-contract Oracle {
+contract OracleGetter {
     ITellor private tellor;
 
     constructor(address payable _tellor) {

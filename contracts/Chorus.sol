@@ -1,16 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.7.3;
 
-import "./Oracle.sol";
-import "./Token.sol";
+import "./OracleGetter.sol";
+import "./ERC20.sol";
 import "./Inflation.sol";
 
 import "hardhat/console.sol";
 
-
-// The contract is also an ERC20 token which holds the collateral currency.
-// It also holds the semi stable token state inside the `token` variable.
-contract Main is Inflation, Oracle, ERC20 {
+contract Chorus is Inflation, OracleGetter, ERC20 {
     event CollateralThreshold(uint256);
     event CollateralPriceAge(uint256);
     event LiquidationPenatly(uint256);
@@ -59,7 +56,7 @@ contract Main is Inflation, Oracle, ERC20 {
         uint256 _inflRatePerYear,
         address _inflBeneficiary
     )
-        Oracle(_tellorAddress)
+        OracleGetter(_tellorAddress)
         ERC20(_tokenName, _tokenSymbol)
         within100e18Range(_inflRatePerYear)
         within1e18Range(_collateralPriceGranularity)
@@ -185,13 +182,13 @@ contract Main is Inflation, Oracle, ERC20 {
             );
     }
 
-    function _collateralRatio(uint256 _collateralBalance, uint256 _totalSupply)
+    function _collateralRatio(uint256 _collateralBalance, uint256 _tSupply)
         internal
         view
         returns (uint256)
     {
         require(_collateralBalance > 0, "collateral total supply is zero");
-        if (_totalSupply == 0) {
+        if (_tSupply == 0) {
             return 0;
         }
 
@@ -199,7 +196,7 @@ contract Main is Inflation, Oracle, ERC20 {
 
         uint256 secsPassed = block.timestamp - inflLastUpdate;
         uint256 tokenSupplyWithInflInterest =
-            accrueInterest(_totalSupply, inflRatePerSec, secsPassed);
+            accrueInterest(_tSupply, inflRatePerSec, secsPassed);
 
         uint256 tokenValue = wmul(tokenPrice(), tokenSupplyWithInflInterest);
 

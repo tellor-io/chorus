@@ -1,28 +1,29 @@
 const { expect } = require("chai");
-const { log } = require("console");
 const { default: Decimal } = require("decimal.js");
-const path = require("path")
 
 let owner, acc1, acc2, acc3, acc4, benificiary;
 let collateral;
-
 let testee;
-let tellor;
+let oracle;
 
 const precision = BigInt(1e18);
 const collateralID = 1;
 const collateralPriceGranularity = 1e6;
 const collateralPrice = 100;
-const collateralName = "Etherium";
-const collateralSymbol = "ETH";
 const tokenName = "Note";
 const tokenSymbol = "NTO";
 
-const inflRate = 5e17; // 50% compound inflation per year.
-const tokenPrice = 1e18;
-
 const secsPerYear = 365 * 24 * 60 * 60
+
+// At 10% the rounding error is 0.02%.
+// At 50% the rounding error is 4%.
+// It is realistic to assume that most project will not need a very high inflation.
+const nominalRateYear = 0.1 //10%
+const effRate = nominalToEffectiveInflation(new Decimal(nominalRateYear))
+const inflRate = new Decimal(effRate).mul(1e18)
 const inflRatePerSec = ((inflRate / 1e10) / (secsPerYear * 10e7))
+
+const tokenPrice = 1e18;
 
 var evmCurrentBlockTime = Math.round((Number(new Date().getTime())) / 1000);
 
@@ -33,7 +34,7 @@ var evmCurrentBlockTime = Math.round((Number(new Date().getTime())) / 1000);
 // but this is too slow so will an algorithm that has a very small precision error.
 // div(_principal, pow(1+_rate, _age));
 // https://medium.com/coinmonks/math-in-solidity-part-4-compound-interest-512d9e13041b
-function accrueInflation(principal, secsPassed,inflPerSec = inflRatePerSec) {
+function accrueInflation(principal, secsPassed, inflPerSec = inflRatePerSec) {
   let rate = 1 + inflPerSec;
   infl = principal / rate ** secsPassed
 
@@ -49,10 +50,10 @@ function accrueInterest(principal, secsPassed) {
 
 
 function nominalToEffectiveInflation(nominal) {
-  let secondsInaYear = new Decimal(secsPerYear)
+  let secsPerYearD = new Decimal(secsPerYear)
 
-  let base = new Decimal(1.0).add(nominal.div(secondsInaYear))
-  let j = base.pow(secondsInaYear)
+  let base = new Decimal(1.0).add(nominal.div(secsPerYearD))
+  let j = base.pow(secsPerYearD)
   let k = j.sub(new Decimal(1.0))
   return k
 }
@@ -72,39 +73,21 @@ describe("All tests", function () {
     let expPrice = Number(accrueInflation(tokenPrice, secsPassed))
     // There is a rounding error so ignore the difference after the rounding error.
     // The total precision is enough that this rounding shouldn't matter.
-    expect(expPrice).to.be.closeTo(actPrice, 1500000000)
+    expect(expPrice).to.be.closeTo(actPrice, 1600000000)
   });
 
   it("Effective Rate", async function () {
-    fact = await ethers.getContractFactory("Main");
-    let effRate = nominalToEffectiveInflation(new Decimal(0.1)) //10%
-    let infRate = new Decimal(effRate).mul(1e18)
-    testee = await fact.deploy(
-      tellor.address,
-      collateral.address,
-      collateralID,
-      collateralPriceGranularity,
-      tokenName,
-      tokenSymbol,
-      BigInt(Math.floor(infRate)),
-      benificiary.address
-    );
-    await testee.deployed();
-    await collateral.increaseAllowance(testee.address, BigInt(1e50));
-    let collateralDeposit = 10n;
-    await testee.depositCollateral(collateralDeposit * precision)
-    const inflRPerSec = (infRate / 1e10) / (secsPerYear * 10e7)
-    let mintedTokens = 100n * precision
-    await testee.mintToken(mintedTokens, acc1.address)
+    let currPrice = await testee.tokenPrice()
+
+    var evmCurrentBlockTime = Math.round((Number(new Date().getTime())) / 1000);
     evmCurrentBlockTime += secsPerYear;
     await waffle.provider.send("evm_setNextBlockTimestamp", [evmCurrentBlockTime]);
     await waffle.provider.send("evm_mine");
-    let secsPassed = evmCurrentBlockTime - Number(await testee.inflLastUpdate())
     let actPrice = Number(await testee.tokenPrice())
-    let expPrice = Number(accrueInflation(tokenPrice, secsPassed, inflRPerSec))
+
     // There is a rounding error so ignore the difference after the rounding error.
     // The total precision is enough that this rounding shouldn't matter.
-    expect(expPrice).to.be.closeTo(actPrice, 150000000000)
+    expect(currPrice - (currPrice * nominalRateYear)).to.be.closeTo(actPrice, 200000000000000)
   });
 
   it("Minting tokens to the inflation beneficiary", async function () {
@@ -125,7 +108,7 @@ describe("All tests", function () {
     let actInflBeneficiaryTokens = Number(await testee.balanceOf(benificiary.address))
     // There is a rounding error so ignore the difference after the rounding error.
     // The total precision is enough that this rounding shouldn't matter.
-    expect(actInflBeneficiaryTokens).to.be.closeTo(expInflBeneficiaryTokens, 4000000000000)
+    expect(actInflBeneficiaryTokens).to.be.closeTo(expInflBeneficiaryTokens, 20000000000000)
   })
 
 
@@ -198,7 +181,7 @@ describe("All tests", function () {
 
     // Reduce the collateral price by 50% to put the system into liquation state.
     // Rewind the machine because oracle price needs to be at least collateralPriceAge old.
-    await tellor.submitValue(collateralID, (collateralPrice / 4) * collateralPriceGranularity)
+    await oracle.submitValue(collateralID, (collateralPrice / 4) * collateralPriceGranularity)
     evmCurrentBlockTime = evmCurrentBlockTime + Number(await testee.collateralPriceAge()) + 100
     await waffle.provider.send("evm_setNextBlockTimestamp", [evmCurrentBlockTime]);
     await waffle.provider.send("evm_mine");
@@ -280,34 +263,51 @@ describe("All tests", function () {
 // `beforeEach` will run before each test, re-deploying the contract every
 // time. It receives a callback, which can be async.
 beforeEach(async function () {
+  // Using deployments.createFixture speeds up the tests as
+  // the reset is done with evm_revert.
+  let res = await setupTest()
+  oracle = res.oracle
+  collateral = res.collateral
+  testee = res.testee
+});
+
+const setupTest = deployments.createFixture(async ({ deployments, getNamedAccounts, ethers }, options) => {
   [owner, acc1, acc2, acc3, acc4, benificiary] = await ethers.getSigners();
 
-  var fact = await ethers.getContractFactory(path.join("tellorplayground", "contracts", "", "TellorPlayground.sol:TellorPlayground"));
-  tellor = await fact.deploy("Tellor", "TRB");
-  await tellor.deployed();
+  let oracleDepl = await deployments.deploy('MockOracle', {
+    from: owner.address,
+  })
+  let oracle = await ethers.getContract("MockOracle");
 
-  var fact = await ethers.getContractFactory("Token");
-  collateral = await fact.deploy("Ethereum", "ETH");
-  await collateral.deployed();
+  let collateralDepl = await deployments.deploy('Token', {
+    from: owner.address,
+    args: [
+      "Ethereum",
+      "ETH"
+    ],
+  })
+  let collateral = await ethers.getContract("Token");
 
   // Deploy the actual contract to test.
-  fact = await ethers.getContractFactory("Main");
-  testee = await fact.deploy(
-    tellor.address,
-    collateral.address,
-    collateralID,
-    collateralPriceGranularity,
-    tokenName,
-    tokenSymbol,
-    BigInt(inflRate),
-    benificiary.address
-  );
-  await testee.deployed();
+  await deployments.deploy('Chorus', {
+    from: owner.address,
+    args: [
+      oracleDepl.address,
+      collateralDepl.address,
+      collateralID,
+      collateralPriceGranularity,
+      tokenName,
+      tokenSymbol,
+      BigInt(Math.floor(inflRate)).toString(),
+      benificiary.address
+    ],
+  });
+  let testee = await ethers.getContract("Chorus");
 
   // Prepare the initial state of the contracts.
 
   // Add price and rewind the evm as the system uses a price at least collateralPriceAge old.
-  await tellor.submitValue(collateralID, collateralPrice * collateralPriceGranularity)
+  await oracle.submitValue(collateralID, collateralPrice * collateralPriceGranularity)
   evmCurrentBlockTime = evmCurrentBlockTime + Number(await testee.collateralPriceAge()) + 100
   await waffle.provider.send("evm_setNextBlockTimestamp", [evmCurrentBlockTime]);
   await waffle.provider.send("evm_mine");
@@ -315,4 +315,5 @@ beforeEach(async function () {
   await collateral.mint(owner.address, 10n * precision)
   await collateral.increaseAllowance(testee.address, BigInt(1e50));
 
+  return { oracle, collateral, testee }
 });
