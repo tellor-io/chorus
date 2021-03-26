@@ -2,7 +2,7 @@
 pragma solidity 0.7.3;
 
 import "@openzeppelin/contracts/math/SafeMath.sol";
-import "./Oracle.sol";
+import "./OracleGetter.sol";
 
 contract MockOracle is ITellor {
     using SafeMath for uint256;

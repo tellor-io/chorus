@@ -1,15 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.7.3;
 
-import "./Oracle.sol";
+import "./OracleGetter.sol";
 import "./ERC20.sol";
 import "./Inflation.sol";
 
 import "hardhat/console.sol";
 
-// The contract is also an ERC20 token which holds the collateral currency.
-// It also holds the semi stable token state inside the `token` variable.
-contract Chorus is Inflation, Oracle, ERC20 {
+contract Chorus is Inflation, OracleGetter, ERC20 {
     event CollateralThreshold(uint256);
     event CollateralPriceAge(uint256);
     event LiquidationPenatly(uint256);
@@ -58,7 +56,7 @@ contract Chorus is Inflation, Oracle, ERC20 {
         uint256 _inflRatePerYear,
         address _inflBeneficiary
     )
-        Oracle(_tellorAddress)
+        OracleGetter(_tellorAddress)
         ERC20(_tokenName, _tokenSymbol)
         within100e18Range(_inflRatePerYear)
         within1e18Range(_collateralPriceGranularity)
