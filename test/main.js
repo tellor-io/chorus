@@ -15,7 +15,10 @@ const tokenSymbol = "NTO";
 
 const secsPerYear = 365 * 24 * 60 * 60
 
-const nominalRateYear = 0.5 //50%
+// At 10% the rounding error is 0.02%.
+// At 50% the rounding error is 4%.
+// It is realistic to assume that most project will not need a very high inflation.
+const nominalRateYear = 0.1 //10%
 const effRate = nominalToEffectiveInflation(new Decimal(nominalRateYear))
 const inflRate = new Decimal(effRate).mul(1e18)
 const inflRatePerSec = ((inflRate / 1e10) / (secsPerYear * 10e7))
@@ -70,7 +73,7 @@ describe("All tests", function () {
     let expPrice = Number(accrueInflation(tokenPrice, secsPassed))
     // There is a rounding error so ignore the difference after the rounding error.
     // The total precision is enough that this rounding shouldn't matter.
-    expect(expPrice).to.be.closeTo(actPrice, 1500000000)
+    expect(expPrice).to.be.closeTo(actPrice, 1600000000)
   });
 
   it("Effective Rate", async function () {
@@ -84,7 +87,7 @@ describe("All tests", function () {
 
     // There is a rounding error so ignore the difference after the rounding error.
     // The total precision is enough that this rounding shouldn't matter.
-    expect(currPrice * nominalRateYear).to.be.closeTo(actPrice, 150000000000)
+    expect(currPrice - (currPrice * nominalRateYear)).to.be.closeTo(actPrice, 200000000000000)
   });
 
   it("Minting tokens to the inflation beneficiary", async function () {
