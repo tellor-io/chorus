@@ -25,8 +25,6 @@ const func = async function (hre) {
             process.env.COLLATERAL_GRANULARITY,
             process.env.COLLATERAL_NAME,
             process.env.COLLATERAL_SYMBOL,
-            process.env.TOKEN_NAME,
-            process.env.TOKEN_SYMBOL,
             process.env.INFL_RATE_PER_YEAR,
             process.env.BENIFICIARY_ADDRESS,
         ],
