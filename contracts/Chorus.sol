@@ -2,7 +2,7 @@
 pragma solidity ^0.7.3;
 
 import "./Oracle.sol";
-import "./Token.sol";
+import "./ERC20.sol";
 import "./Inflation.sol";
 
 import "hardhat/console.sol";
@@ -184,13 +184,13 @@ contract Chorus is Inflation, Oracle, ERC20 {
             );
     }
 
-    function _collateralRatio(uint256 _collateralBalance, uint256 _totalSupply)
+    function _collateralRatio(uint256 _collateralBalance, uint256 _tSupply)
         internal
         view
         returns (uint256)
     {
         require(_collateralBalance > 0, "collateral total supply is zero");
-        if (_totalSupply == 0) {
+        if (_tSupply == 0) {
             return 0;
         }
 
@@ -198,7 +198,7 @@ contract Chorus is Inflation, Oracle, ERC20 {
 
         uint256 secsPassed = block.timestamp - inflLastUpdate;
         uint256 tokenSupplyWithInflInterest =
-            accrueInterest(_totalSupply, inflRatePerSec, secsPassed);
+            accrueInterest(_tSupply, inflRatePerSec, secsPassed);
 
         uint256 tokenValue = wmul(tokenPrice(), tokenSupplyWithInflInterest);
 

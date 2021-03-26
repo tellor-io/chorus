@@ -2,8 +2,9 @@
 pragma solidity 0.7.3;
 
 import "@openzeppelin/contracts/math/SafeMath.sol";
+import "./Oracle.sol";
 
-contract MockOracle {
+contract MockOracle is ITellor {
     using SafeMath for uint256;
 
     event Transfer(address indexed from, address indexed to, uint256 value);
@@ -287,6 +288,7 @@ contract MockOracle {
     function retrieveData(uint256 _requestId, uint256 _timestamp)
         public
         view
+        override
         returns (uint256)
     {
         return values[_requestId][_timestamp];
@@ -314,6 +316,7 @@ contract MockOracle {
     function getNewValueCountbyRequestId(uint256 _requestId)
         public
         view
+        override
         returns (uint256)
     {
         return timestamps[_requestId].length;
@@ -328,6 +331,7 @@ contract MockOracle {
     function getTimestampbyRequestIDandIndex(uint256 _requestId, uint256 index)
         public
         view
+        override
         returns (uint256)
     {
         uint256 len = timestamps[_requestId].length;
