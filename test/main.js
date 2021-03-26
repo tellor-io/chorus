@@ -15,11 +15,11 @@ const tokenSymbol = "NTO";
 
 const secsPerYear = 365 * 24 * 60 * 60
 
-const effRate = nominalToEffectiveInflation(new Decimal(0.5)) //50%
+const nominalRateYear = 0.5 //50%
+const effRate = nominalToEffectiveInflation(new Decimal(nominalRateYear))
 const inflRate = new Decimal(effRate).mul(1e18)
 const inflRatePerSec = ((inflRate / 1e10) / (secsPerYear * 10e7))
 
-// const inflRate = 5e17; // 50% compound inflation per year.
 const tokenPrice = 1e18;
 
 var evmCurrentBlockTime = Math.round((Number(new Date().getTime())) / 1000);
@@ -47,10 +47,10 @@ function accrueInterest(principal, secsPassed) {
 
 
 function nominalToEffectiveInflation(nominal) {
-  let secondsInaYear = new Decimal(secsPerYear)
+  let secsPerYearD = new Decimal(secsPerYear)
 
-  let base = new Decimal(1.0).add(nominal.div(secondsInaYear))
-  let j = base.pow(secondsInaYear)
+  let base = new Decimal(1.0).add(nominal.div(secsPerYearD))
+  let j = base.pow(secsPerYearD)
   let k = j.sub(new Decimal(1.0))
   return k
 }
@@ -74,35 +74,17 @@ describe("All tests", function () {
   });
 
   it("Effective Rate", async function () {
-    // fact = await ethers.getContractFactory("Chorus");
-    // let effRate = nominalToEffectiveInflation(new Decimal(0.1)) //10%
-    // let infRate = new Decimal(effRate).mul(1e18)
-    // testee = await fact.deploy(
-    //   oracle.address,
-    //   collateral.address,
-    //   collateralID,
-    //   collateralPriceGranularity,
-    //   tokenName,
-    //   tokenSymbol,
-    //   BigInt(Math.floor(infRate)),
-    //   benificiary.address
-    // );
-    // await testee.deployed();
-    await collateral.increaseAllowance(testee.address, BigInt(1e50));
-    let collateralDeposit = 10n;
-    await testee.depositCollateral(collateralDeposit * precision)
-    // const inflRPerSec = (inflRate / 1e10) / (secsPerYear * 10e7)
-    let mintedTokens = 100n * precision
-    await testee.mintToken(mintedTokens, acc1.address)
+    let currPrice = await testee.tokenPrice()
+
+    var evmCurrentBlockTime = Math.round((Number(new Date().getTime())) / 1000);
     evmCurrentBlockTime += secsPerYear;
     await waffle.provider.send("evm_setNextBlockTimestamp", [evmCurrentBlockTime]);
     await waffle.provider.send("evm_mine");
-    let secsPassed = evmCurrentBlockTime - Number(await testee.inflLastUpdate())
     let actPrice = Number(await testee.tokenPrice())
-    let expPrice = Number(accrueInflation(tokenPrice, secsPassed, inflRatePerSec))
+
     // There is a rounding error so ignore the difference after the rounding error.
     // The total precision is enough that this rounding shouldn't matter.
-    expect(expPrice).to.be.closeTo(actPrice, 150000000000)
+    expect(currPrice * nominalRateYear).to.be.closeTo(actPrice, 150000000000)
   });
 
   it("Minting tokens to the inflation beneficiary", async function () {
