@@ -5,8 +5,6 @@ import "./OracleGetter.sol";
 import "./ERC20.sol";
 import "./Inflation.sol";
 
-import "hardhat/console.sol";
-
 contract Chorus is Inflation, OracleGetter, ERC20 {
     event CollateralThreshold(uint256);
     event CollateralPriceAge(uint256);
