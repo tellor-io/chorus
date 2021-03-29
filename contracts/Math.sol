@@ -2,7 +2,7 @@
 // Copied from https://github.com/dapphub/ds-math
 // Added the div function from openzepeling safeMath
 
-pragma solidity ^0.7.3;
+pragma solidity 0.8.3;
 
 contract DSMath {
     function add(uint256 x, uint256 y) internal pure returns (uint256 z) {

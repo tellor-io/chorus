@@ -44,7 +44,8 @@ module.exports = {
       url: "https://data-seed-prebsc-1-s1.binance.org:8545",
       chainId: 97,
       gasPrice: 20000000000,
-      accounts: [process.env.PRIVATE_KEY]
+      accounts: [process.env.PRIVATE_KEY],
+      explorer: "https://testnet.bscscan.com/address/"
     },
     bscMain: {
       url: "https://bsc-dataseed1.binance.org:443",
@@ -59,7 +60,7 @@ module.exports = {
   solidity: {
     compilers: [
       {
-        version: "0.7.3"
+        version: "0.8.3"
       }
     ]
   },
