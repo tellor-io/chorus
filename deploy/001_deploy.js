@@ -12,6 +12,7 @@ const func = async function (hre) {
         hre.hardhatArguments.network == "bscMain"
     ) {
         await run("remove-logs");
+        deployer = process.env.PRIVATE_KEY
     }
 
     const contract = await deploy('Chorus', {
