@@ -34,9 +34,8 @@
     "tellorplayground": "github:tellor-io/tellorplayground#main"
   },
   "dependencies": {
-    "@openzeppelin/contracts": "^3.3.0",
     "dotenv": "^8.2.0",
     "ethers": "^5.0.23",
-    "usingtellor": "github:tellor-io/usingtellor#master"
+    "openzeppelin-solidity": "github:OpenZeppelin/openzeppelin-contracts#master"
   }
 }
