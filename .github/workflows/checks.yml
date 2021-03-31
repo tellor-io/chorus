@@ -41,16 +41,22 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
-      - name: Slither Static Analysis
+      - name: Setup env
         uses: actions/setup-node@v1
         with:
           node-version: '14.x'
-      - run: npm install
-      - run: sudo apt-get install python3-setuptools
-      - run: git clone https://github.com/crytic/slither.git && cd slither && sudo python3 setup.py install
-      - run: git clone https://github.com/crytic/echidna.git && cd echidna && sudo python3 setup.py install
-      - run: make slither
-      - run: make echidna
+      - name: Install dependencies
+        run: |
+          npm install
+          sudo apt-get install python3-setuptools
+      - name: Slither Static Analysis
+        run: |
+          git clone https://github.com/crytic/slither.git && cd slither && sudo python3 setup.py install
+          make slither
+      - name: Echidna Mutating testing
+        run: |
+          git clone https://github.com/crytic/echidna.git && cd echidna && sudo python3 setup.py install
+          make echidna
         env:
           # These are not needed for the tests but
           # slither runs hardhat to compile the contracts and
