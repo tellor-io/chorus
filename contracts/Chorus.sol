@@ -7,6 +7,11 @@ import "./Inflation.sol";
 
 import "hardhat/console.sol";
 
+/** 
+ @author Tellor Inc.
+ @title Chorus
+ @dev  Main functionality for Chorus system
+**/
 contract Chorus is Inflation, OracleGetter, ERC20 {
     event CollateralThreshold(uint256);
     event CollateralPriceAge(uint256);

@@ -4,7 +4,11 @@ pragma solidity 0.8.3;
 
 import "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
 
-// Taken from Openzeppeling implementation, but stripping Context.sol
+ /** 
+ @author Tellor Inc.
+ @title Tellor
+ @dev  // Sample token taken from Openzeppeling implementation, but stripping Context.sol
+**/
 contract ERC20 is IERC20 {
     mapping(address => uint256) private _balances;
 
