@@ -279,14 +279,14 @@ const setupTest = deployments.createFixture(async ({ deployments, getNamedAccoun
   })
   let oracle = await ethers.getContract("MockOracle");
 
-  let collateralDepl = await deployments.deploy('Token', {
+  let collateralDepl = await deployments.deploy('Mintable', {
     from: owner.address,
     args: [
       "Ethereum",
       "ETH"
     ],
   })
-  let collateral = await ethers.getContract("Token");
+  let collateral = await ethers.getContract("Mintable");
 
   // Deploy the actual contract to test.
   await deployments.deploy('Chorus', {

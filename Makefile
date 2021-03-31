@@ -10,3 +10,6 @@ slither: ## Run slither security checks.
 .PHONY: solhint
 solhint: ## Run solhint linter.
 	solhint 'contracts/**/*.sol'
+.PHONY: echidna
+echidna: ## Run echidna mutating testing.
+	npx hardhat clean && echidna-test . --contract ChorusTest --config  echidna.yml

@@ -11,6 +11,9 @@ contract ChorusTest is Chorus {
 
     uint256 public constant collateralDeposit = 1e19;
 
+    address public constant echidna_caller =
+        0x00a329C0648769a73afAC7F9381e08fb43DBEA70;
+
     // 10% effective inf rate.
     constructor()
         Chorus(
@@ -24,7 +27,8 @@ contract ChorusTest is Chorus {
             address(0x1)
         )
     {
-        admin = 0x0e93f23278161bCa6F22D6268ca44691042ed437;
+        admin = echidna_caller;
+        collateralThreshold = 0;
         collateral.mint(admin, collateralDeposit);
     }
 
