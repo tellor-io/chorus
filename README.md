@@ -48,7 +48,7 @@ hardhat --network <networkName> deploy
 hardhat --network <networkName> etherscan-verify --api-key <api-key>
 
 ## How to Contribute<a name="how2contribute"> </a>  
-Join our [Discord](https://discord.gg/zFcM3G) or [Telegram](https://t.me/tellor)
+Join our [Discord](https://discord.gg/g99vE5Hb) or [Telegram](https://t.me/tellor)
 
 Check out our issues log here on Github or reach out with any questions! 
 
