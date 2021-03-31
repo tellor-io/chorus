@@ -19,11 +19,17 @@ contract ChorusTest is Chorus {
             "Note",
             "NTO",
             105170917901244404,
-            address(0x0)
+            address(0x1)
         )
-    {}
+    {
+        admin = address(0x0);
+    }
 
-    function echidna_check_balance() public pure returns (bool) {
-        return true;
+    function echidna_colateral_deposit() public view returns (bool) {
+        return collateralToken.balanceOf(address(this)) == 0;
+    }
+
+    function echidna_total_supply() public view returns (bool) {
+        return totalSupply() == 0;
     }
 }

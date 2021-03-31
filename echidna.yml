@@ -1,0 +1,2 @@
+filterBlacklist: false
+filterFunctions: ["Chorus.mintToken(uint256, address)"]
