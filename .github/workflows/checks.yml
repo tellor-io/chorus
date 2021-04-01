@@ -12,12 +12,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
-    - name: Run tests with Node.js ${{ matrix.node-version }}
+    - name: Setup Node.js
       uses: actions/setup-node@v1
       with:
         node-version: '14.x'
-    - run: npm install
-    - run: npx hardhat test
+    - name: Install deps
+      run: |
+        npm install
+    - name: Hardhat Test
+      run: |
+        npx hardhat test
       env:
         # These are not needed for the tests but
         # hardhat fails to start if not present.
@@ -30,22 +34,28 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
-      - name: Run Solhint
+      - name: Setup Node.js
         uses: actions/setup-node@v1
         with:
           node-version: '14.x'
-      - run: npm install -g solhint
-      - run: make solhint
+      - name: Install deps
+        run: |
+          apt-get update
+          apt-get install -y make
+          npm install -g solhint
+      - name: Solhint
+        run: |
+          make solhint
   Security:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v2
-      - name: Node
+      - name: Setup Node.js
         uses: actions/setup-node@v1
         with:
           node-version: '14.x'
-      - name: Setup
+      - name: Install deps
         run: |
           apt-get update
           npm install hardhat
@@ -62,10 +72,3 @@ jobs:
           tar -xf echidna-test.tar.gz
           mv ./echidna-test /usr/bin/
           make echidna
-        env:
-          # These are not needed for the tests but
-          # Echidna runs hardhat to compile the contracts and
-          # hardhat compilation fails if these are not present.
-          NODE_TEST: "x"
-          NODE_MAIN: "x"
-          PRIVATE_KEY: "00000000000000000000000000000000000000000000000000"
