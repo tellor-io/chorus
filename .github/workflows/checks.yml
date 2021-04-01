@@ -72,3 +72,10 @@ jobs:
           tar -xf echidna-test.tar.gz
           sudo mv ./echidna-test /usr/bin/
           make echidna
+        env:
+          # These are not needed for the tests but
+          # hardhat fails to start if not present.
+          NODE_TEST: "x"
+          NODE_MAIN: "x"
+          PRIVATE_KEY: "00000000000000000000000000000000000000000000000000"
+          REPORT_GAS: "true"
