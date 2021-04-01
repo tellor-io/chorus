@@ -40,8 +40,8 @@ jobs:
           node-version: '14.x'
       - name: Install deps
         run: |
-          apt-get update
-          apt-get install -y make
+          sudo apt-get update
+          sudo apt-get install -y make
           npm install -g solhint
       - name: Solhint
         run: |
@@ -57,9 +57,9 @@ jobs:
           node-version: '14.x'
       - name: Install deps
         run: |
-          apt-get update
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends python3-pip python3-dev build-essential
           npm install hardhat
-          apt-get install -y --no-install-recommends python3-pip python3-dev build-essential
       - name: Slither Static Analysis
         run: |
           git clone https://github.com/crytic/slither.git && cd slither && sudo python3 setup.py install
@@ -70,5 +70,5 @@ jobs:
           wget https://github.com/crytic/echidna/releases/download/v1.7.0/echidna-test-1.7.0-Ubuntu-18.04.zip
           unzip echidna-test-1.7.0-Ubuntu-18.04.zip
           tar -xf echidna-test.tar.gz
-          mv ./echidna-test /usr/bin/
+          sudo mv ./echidna-test /usr/bin/
           make echidna
