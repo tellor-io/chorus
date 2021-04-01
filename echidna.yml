@@ -1,2 +1,3 @@
-filterBlacklist: false
-filterFunctions: ["Chorus.mintToken(uint256, address)"]
+# filterBlacklist: false
+# filterFunctions: ["ChorusTest.mintToken(uint256,address)"]
+# seqLen: 2
