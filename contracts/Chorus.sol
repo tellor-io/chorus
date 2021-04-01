@@ -88,6 +88,11 @@ contract Chorus is Inflation, OracleGetter, ERC20 {
         _;
     }
 
+    function setAdmin(address _newAdmin) external onlyAdmin{
+        address = _newAdmin;
+    }
+
+    
     function depositCollateral(uint256 wad) external onlyAdmin {
         require(wad > 0, "deposit amount 0");
         require(
