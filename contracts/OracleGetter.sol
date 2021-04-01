@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.3;
 
-import "http://raw.githubusercontent.com/tellor-io/tellor3/master/contracts/ITellor.sol"
+import "./interfaces/ITellor.sol";
 
 contract OracleGetter {
     ITellor private tellor;

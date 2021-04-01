@@ -26,17 +26,6 @@ interface IChorus {
         uint256 collateralRatio
     );
 
-    address external admin = msg.sender;
-    uint256 external collateralID; // The collateral id used to check the Tellor oracle for its USD price.
-    uint256 external collateralPriceGranularity;
-    ERC20 external collateralToken;
-    uint256 external collateralThreshold = 15e17; // 150%.
-    uint256 external collateralPriceAge = 3600; // 1h.
-    uint256 external liquidationPenatly = 0;
-    uint256 external inflRatePerSec;
-    uint256 external inflLastUpdate = block.timestamp;
-    address external inflBeneficiary; // Where to send the inflation tokens.
-
     function setAdmin(address _newAdmin) external;
     function depositCollateral(uint256 wad) external;
     function withdrawCollateral(uint256 wad) external;
@@ -59,7 +48,7 @@ interface IChorus {
     function transfer(address recipient, uint256 amount) external returns (bool);
     function allowance(address owner, address spender) external view returns (uint256);
     function approve(address spender, uint256 amount) external returns (bool);
-    function transferFrom(address sender,address recipient,uint256 amount) external virtual override returns (bool); 
+    function transferFrom(address sender,address recipient,uint256 amount) external returns (bool); 
     function increaseAllowance(address spender, uint256 addedValue) external returns (bool);
     function decreaseAllowance(address spender, uint256 subtractedValue) external returns (bool);
 }
