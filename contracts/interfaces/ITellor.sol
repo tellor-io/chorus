@@ -1,332 +1,262 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.3;
+pragma solidity 0.7.4;
 
-import "./OracleGetter.sol";
-
-contract MockOracle is ITellor {
-    event Transfer(address indexed from, address indexed to, uint256 value);
-    event Approval(
-        address indexed owner,
-        address indexed spender,
-        uint256 value
+/** 
+ @author Tellor Inc.
+ @title ITellor
+ @dev  This contract holds the interface for all Tellor functions
+**/
+interface ITellor {
+    /*Events*/
+    event NewTellorAddress(address _newTellor);
+    event NewDispute(
+        uint256 indexed _disputeId,
+        uint256 indexed _requestId,
+        uint256 _timestamp,
+        address _miner
+    );
+    event Voted(
+        uint256 indexed _disputeID,
+        bool _position,
+        address indexed _voter,
+        uint256 indexed _voteWeight
+    );
+    event DisputeVoteTallied(
+        uint256 indexed _disputeID,
+        int256 _result,
+        address indexed _reportedMiner,
+        address _reportingParty,
+        bool _passed
     );
     event TipAdded(
         address indexed _sender,
         uint256 indexed _requestId,
-        uint256 _tip
+        uint256 _tip,
+        uint256 _totalTips
     );
-    event NewValue(uint256 _requestId, uint256 _time, uint256 _value);
+    event NewChallenge(
+        bytes32 indexed _currentChallenge,
+        uint256[5] _currentRequestId,
+        uint256 _difficulty,
+        uint256 _totalTips
+    );
+    event NewValue(
+        uint256[5] _requestId,
+        uint256 _time,
+        uint256[5] _value,
+        uint256 _totalTips,
+        bytes32 indexed _currentChallenge
+    );
+    event NonceSubmitted(
+        address indexed _miner,
+        string _nonce,
+        uint256[5] _requestId,
+        uint256[5] _value,
+        bytes32 indexed _currentChallenge,
+        uint256 _slot
+    );
+    event NewStake(address indexed _sender); //Emits upon new staker
+    event StakeWithdrawn(address indexed _sender); //Emits when a staker is now no longer staked
+    event StakeWithdrawRequested(address indexed _sender); //Emits when a staker begins the 7 day withdraw period
+    event Approval(
+        address indexed _owner,
+        address indexed _spender,
+        uint256 _value
+    );
+    event Transfer(address indexed _from, address indexed _to, uint256 _value); //ERC20 Transfer Event
 
-    mapping(uint256 => mapping(uint256 => uint256)) public values; //requestId -> timestamp -> value
-    mapping(uint256 => mapping(uint256 => bool)) public isDisputed; //requestId -> timestamp -> value
-    mapping(uint256 => uint256[]) public timestamps;
-    mapping(address => uint256) public balances;
-    mapping(address => uint256) private _balances;
-    mapping(address => mapping(address => uint256)) private _allowances;
-
-    uint256 private _totalSupply;
-    string private _name;
-    string private _symbol;
-    uint8 private _decimals;
-
-    constructor() {
-        _name = "Tribute";
-        _symbol = "TRB";
-        _decimals = 18;
-    }
-
-    /**
-     * @dev Public function to mint tokens for the passed address
-     * @param user The address which will own the tokens
-     *
-     */
-    function faucet(address user) external {
-        _mint(user, 1000 ether);
-    }
-
-    /**
-     * @dev Returns the name of the token.
-     */
-    function name() public view returns (string memory) {
-        return _name;
-    }
-
-    /**
-     * @dev Returns the symbol of the token.
-     */
-    function symbol() public view returns (string memory) {
-        return _symbol;
-    }
-
-    /**
-     * @dev Returns the number of decimals used to get its user representation.
-     * For example, if `decimals` equals `2`, a balance of `505` tokens should
-     * be displayed to a user as `5,05` (`505 / 10 ** 2`).
-     *
-     * Tokens usually opt for a value of 18, imitating the relationship between
-     * Ether and Wei. This is the value {ERC20} uses, unless {_setupDecimals} is
-     * called.
-     *
-     * NOTE: This information is only used for _display_ purposes: it in
-     * no way affects any of the arithmetic of the contract.
-     */
-    function decimals() public view returns (uint8) {
-        return _decimals;
-    }
-
-    /**
-     * @dev Returns the total supply of the token.
-     */
-    function totalSupply() public view returns (uint256) {
-        return _totalSupply;
-    }
-
-    /**
-     * @dev Returns the balance of a given user.
-     */
-    function balanceOf(address account) public view returns (uint256) {
-        return _balances[account];
-    }
-
-    /**
-     * @dev Transfer tokens from user to another
-     * @param recipient The destination address
-     * @param amount The amount of tokens, including decimals, to transfer
-     * @return bool If the transfer succeeded
-     *
-     */
-    function transfer(address recipient, uint256 amount)
-        public
-        virtual
-        returns (bool)
-    {
-        _transfer(msg.sender, recipient, amount);
-        return true;
-    }
-
-    /**
-     * @dev Retruns the amount that an address is alowed to spend of behalf of other
-     * @param owner The address which owns the tokens
-     * @param spender The address that will use the tokens
-     * @return uint256 Indicating the amount of allowed tokens
-     *
-     */
-    function allowance(address owner, address spender)
-        public
+    /*Functions -- master*/
+    function changeDeity(address _newDeity) external;
+    function changeOwner(address _newOwner) external;
+    function changeTellorContract(address _tellorContract) external;
+    /*Functions -- Extension*/
+    function depositStake() external;
+    function requestStakingWithdraw() external;
+    function tallyVotes(uint256 _disputeId) external;
+    function updateMinDisputeFee() external;
+    function updateTellor(uint256 _disputeId) external;
+    function withdrawStake() external;
+    /*Functions -- Tellor*/
+    function addTip(uint256 _requestId, uint256 _tip) external;
+    function changeExtension(address _extension) external;
+    function changeMigrator(address _migrator) external;
+    function migrate() external;
+    function migrateFor(
+        address _destination,
+        uint256 _amount,
+        bool _bypass
+    ) external;
+    function migrateForBatch(
+        address[] calldata _destination,
+        uint256[] calldata _amount
+    ) external;
+    function migrateFrom(
+        address _origin,
+        address _destination,
+        uint256 _amount,
+        bool _bypass
+    ) external;
+    function migrateFromBatch(
+        address[] calldata _origin,
+        address[] calldata _destination,
+        uint256[] calldata _amount
+    ) external;
+    function submitMiningSolution(
+        string calldata _nonce,
+        uint256[5] calldata _requestIds,
+        uint256[5] calldata _values
+    ) external;
+    /*Functions -- TellorGetters*/
+    function didMine(bytes32 _challenge, address _miner)
+        external
         view
-        virtual
-        returns (uint256)
-    {
-        return _allowances[owner][spender];
-    }
-
-    /**
-     * @dev Approves  amount that an address is alowed to spend of behalf of other
-     * @param spender The address which user the tokens
-     * @param amount The amount that msg.sender is allowing spender to use
-     * @return bool If the transaction succeeded
-     *
-     */
-    function approve(address spender, uint256 amount)
-        public
-        virtual
-        returns (bool)
-    {
-        _approve(msg.sender, spender, amount);
-        return true;
-    }
-
-    /**
-     * @dev Transfer tokens from user to another
-     * @param sender The address which owns the tokens
-     * @param recipient The destination address
-     * @param amount The amount of tokens, including decimals, to transfer
-     * @return bool If the transfer succeeded
-     *
-     */
-    function transferFrom(
-        address sender,
-        address recipient,
-        uint256 amount
-    ) public virtual returns (bool) {
-        _transfer(sender, recipient, amount);
-        _approve(sender, msg.sender, _allowances[sender][msg.sender] - amount);
-        return true;
-    }
-
-    /**
-     * @dev Helper function to increase the allowance
-     */
-    function increaseAllowance(address spender, uint256 addedValue)
-        public
-        virtual
-        returns (bool)
-    {
-        _approve(
-            msg.sender,
-            spender,
-            _allowances[msg.sender][spender] + addedValue
+        returns (bool);
+    function didVote(uint256 _disputeId, address _address)
+        external
+        view
+        returns (bool);
+    function getAddressVars(bytes32 _data) external view returns (address);
+    function getAllDisputeVars(uint256 _disputeId)
+        external
+        view
+        returns (
+            bytes32,
+            bool,
+            bool,
+            bool,
+            address,
+            address,
+            address,
+            uint256[9] memory,
+            int256
         );
-        return true;
-    }
-
-    /**
-     * @dev Helper function to increase the allowance
-     */
-    function decreaseAllowance(address spender, uint256 subtractedValue)
-        public
-        virtual
-        returns (bool)
-    {
-        _approve(
-            msg.sender,
-            spender,
-            _allowances[msg.sender][spender] - subtractedValue
-        );
-        return true;
-    }
-
-    /**
-     * @dev Internal function to perform token transfer
-     */
-    function _transfer(
-        address sender,
-        address recipient,
-        uint256 amount
-    ) internal virtual {
-        require(sender != address(0), "ERC20: transfer from the zero address");
-        require(recipient != address(0), "ERC20: transfer to the zero address");
-
-        _balances[sender] = _balances[sender] - amount;
-        _balances[recipient] = _balances[recipient] + amount;
-        emit Transfer(sender, recipient, amount);
-    }
-
-    /**
-     * @dev Internal function to create new tokens for the user
-     */
-    function _mint(address account, uint256 amount) internal virtual {
-        require(account != address(0), "ERC20: mint to the zero address");
-
-        _totalSupply = _totalSupply + amount;
-        _balances[account] = _balances[account] + amount;
-        emit Transfer(address(0), account, amount);
-    }
-
-    /**
-     * @dev Internal function to burn tokens for the user
-     */
-    function _burn(address account, uint256 amount) internal virtual {
-        require(account != address(0), "ERC20: burn from the zero address");
-
-        _balances[account] = _balances[account] - amount;
-        _totalSupply = _totalSupply - amount;
-        emit Transfer(account, address(0), amount);
-    }
-
-    /**
-     * @dev Internal function to approve tokens for the user
-     */
-    function _approve(
-        address owner,
-        address spender,
-        uint256 amount
-    ) internal virtual {
-        require(owner != address(0), "ERC20: approve from the zero address");
-        require(spender != address(0), "ERC20: approve to the zero address");
-
-        _allowances[owner][spender] = amount;
-        emit Approval(owner, spender, amount);
-    }
-
-    /**
-     * @dev A mock function to submit a value to be read withoun miners needed
-     * @param _requestId The tellorId to associate the value to
-     * @param _value the value for the requestId
-     */
-    function submitValue(uint256 _requestId, uint256 _value) external {
-        values[_requestId][block.timestamp] = _value;
-        timestamps[_requestId].push(block.timestamp);
-        emit NewValue(_requestId, block.timestamp, _value);
-    }
-
-    /**
-     * @dev A mock function to create a dispute
-     * @param _requestId The tellorId to be disputed
-     * @param _timestamp the timestamp that indentifies for the value
-     */
-    function disputeValue(uint256 _requestId, uint256 _timestamp) external {
-        values[_requestId][_timestamp] = 0;
-        isDisputed[_requestId][_timestamp] = true;
-    }
-
-    /**
-     * @dev Retreive value from oracle based on requestId/timestamp
-     * @param _requestId being requested
-     * @param _timestamp to retreive data/value from
-     * @return uint value for requestId/timestamp submitted
-     */
-    function retrieveData(uint256 _requestId, uint256 _timestamp)
-        public
+    function getDisputeIdByDisputeHash(bytes32 _hash)
+        external
         view
-        override
-        returns (uint256)
-    {
-        return values[_requestId][_timestamp];
-    }
-
-    /**
-     * @dev Gets if the mined value for the specified requestId/_timestamp is currently under dispute
-     * @param _requestId to looku p
-     * @param _timestamp is the timestamp to look up miners for
-     * @return bool true if requestId/timestamp is under dispute
-     */
-    function isInDispute(uint256 _requestId, uint256 _timestamp)
-        public
+        returns (uint256);
+    function getDisputeUintVars(uint256 _disputeId, bytes32 _data)
+        external
         view
-        returns (bool)
-    {
-        return isDisputed[_requestId][_timestamp];
-    }
+        returns (uint256);
+    function getLastNewValue() external view returns (uint256, bool);
+    function getLastNewValueById(uint256 _requestId)
+        external
+        view
+        returns (uint256, bool);
+    function getMinedBlockNum(uint256 _requestId, uint256 _timestamp)
+        external
+        view
+        returns (uint256);
+    function getMinersByRequestIdAndTimestamp(
+        uint256 _requestId,
+        uint256 _timestamp
+    ) external view returns (address[5] memory);
 
-    /**
-     * @dev Counts the number of values that have been submited for the request
-     * @param _requestId the requestId to look up
-     * @return uint count of the number of values received for the requestId
-     */
     function getNewValueCountbyRequestId(uint256 _requestId)
-        public
+        external
         view
-        override
-        returns (uint256)
-    {
-        return timestamps[_requestId].length;
-    }
-
-    /**
-     * @dev Gets the timestamp for the value based on their index
-     * @param _requestId is the requestId to look up
-     * @param index is the value index to look up
-     * @return uint timestamp
-     */
-    function getTimestampbyRequestIDandIndex(uint256 _requestId, uint256 index)
-        public
+        returns (uint256);
+    function getRequestIdByRequestQIndex(uint256 _index)
+        external
         view
-        override
-        returns (uint256)
-    {
-        uint256 len = timestamps[_requestId].length;
-        if (len == 0 || len <= index) return 0;
-        return timestamps[_requestId][index];
-    }
-
-    /**
-     * @dev Adds a tip to a given request Id.
-     * @param _requestId is the requestId to look up
-     * @param _amount is the amount of tips
-     */
-    function addTip(uint256 _requestId, uint256 _amount) external {
-        _transfer(msg.sender, address(this), _amount);
-        emit TipAdded(msg.sender, _requestId, _amount);
-    }
+        returns (uint256);
+    function getRequestIdByTimestamp(uint256 _timestamp)
+        external
+        view
+        returns (uint256);
+    function getRequestQ() external view returns (uint256[51] memory);
+    function getRequestUintVars(uint256 _requestId, bytes32 _data)
+        external
+        view
+        returns (uint256);
+    function getRequestVars(uint256 _requestId)
+        external
+        view
+        returns (uint256, uint256);
+    function getStakerInfo(address _staker)
+        external
+        view
+        returns (uint256, uint256);
+    function getSubmissionsByTimestamp(uint256 _requestId, uint256 _timestamp)
+        external
+        view
+        returns (uint256[5] memory);
+    function getTimestampbyRequestIDandIndex(uint256 _requestID, uint256 _index)
+        external
+        view
+        returns (uint256);
+    function getUintVar(bytes32 _data) external view returns (uint256);
+    function isInDispute(uint256 _requestId, uint256 _timestamp)
+        external
+        view
+        returns (bool);
+    function retrieveData(uint256 _requestId, uint256 _timestamp)
+        external
+        view
+        returns (uint256);
+    function totalSupply() external view returns (uint256);
+    function name() external pure returns (string memory);
+    function symbol() external pure returns (string memory);
+    function decimals() external pure returns (uint8);
+    function getNewCurrentVariables()
+        external
+        view
+        returns (
+            bytes32 _challenge,
+            uint256[5] memory _requestIds,
+            uint256 _difficulty,
+            uint256 _tip
+        );
+    function getNewVariablesOnDeck()
+        external
+        view
+        returns (uint256[5] memory idsOnDeck, uint256[5] memory tipsOnDeck
+        );
+    function getTopRequestIDs()
+        external
+        view
+        returns (uint256[5] memory _requestIds);
+    /*Functions -- TellorStake*/
+    function beginDispute(
+        uint256 _requestId,
+        uint256 _timestamp,
+        uint256 _minerIndex
+    ) external;
+    function proposeFork(address _propNewTellorAddress) external;
+    function unlockDisputeFee(uint256 _disputeId) external;
+    function verify() external returns (uint256);
+    function vote(uint256 _disputeId, bool _supportsDispute) external;
+    /*Functions -- TellorTransfer*/
+    function approve(address _spender, uint256 _amount) external returns (bool);
+    function allowance(address _user, address _spender)
+        external
+        view
+        returns (uint256);
+    function allowedToTrade(address _user, uint256 _amount)
+        external
+        view
+        returns (bool);
+    function balanceOf(address _user) external view returns (uint256);
+    function balanceOfAt(address _user, uint256 _blockNumber)
+        external
+        view
+        returns (uint256);
+    function transfer(address _to, uint256 _amount) external returns (bool);
+    function transferFrom(
+        address _from,
+        address _to,
+        uint256 _amount
+    ) external returns (bool);
+    //Test Functions
+    function theLazyCoon(address _address, uint256 _amount) external;
+    function testSubmitMiningSolution(
+        string calldata _nonce,
+        uint256[5] calldata _requestId,
+        uint256[5] calldata _value
+    ) external;
+    function manuallySetDifficulty(uint256 _diff) external;
+    function testgetMax5(uint256[51] memory requests)
+        external
+        view
+        returns (uint256[5] memory _max, uint256[5] memory _index);
 }
