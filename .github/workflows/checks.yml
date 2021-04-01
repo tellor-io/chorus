@@ -41,21 +41,30 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
-      - name: Setup
+      - name: Node
         uses: actions/setup-node@v1
         with:
           node-version: '14.x'
+      - name: Setup
+        run: |
+          apt-get update
+          npm install hardhat
+          apt-get install -y --no-install-recommends python3-pip python3-dev build-essential
+      - name: Slither Static Analysis
+        run: |
+          git clone https://github.com/crytic/slither.git && cd slither && sudo python3 setup.py install
+          make slither
       - name: Echidna Mutating testing
         run: |
-          pip install crytic-compile slither-analyzer
+          pip3 install crytic-compile slither-analyzer
           wget https://github.com/crytic/echidna/releases/download/v1.7.0/echidna-test-1.7.0-Ubuntu-18.04.zip
           unzip echidna-test-1.7.0-Ubuntu-18.04.zip
           tar -xf echidna-test.tar.gz
           mv ./echidna-test /usr/bin/
-          echidna-test . --contract ChorusTest
+          make echidna
         env:
           # These are not needed for the tests but
-          # slither runs hardhat to compile the contracts and
+          # Echidna runs hardhat to compile the contracts and
           # hardhat compilation fails if these are not present.
           NODE_TEST: "x"
           NODE_MAIN: "x"
