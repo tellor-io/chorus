@@ -1,5 +1,10 @@
 # filterBlacklist: false
 # filterFunctions: ["ChorusTest.mintToken(uint256,address)"]
 # seqLen: 2
+
 stopOnFail: true
-testLimit: 200
+
+testLimit: 100
+
+deployer: "0x42424242"
+sender: ["0x42424242"]
