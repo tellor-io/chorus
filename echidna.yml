@@ -4,7 +4,7 @@
 
 stopOnFail: true
 
-testLimit: 100
+testLimit: 2000
 
 deployer: "0x42424242"
 sender: ["0x42424242"]
