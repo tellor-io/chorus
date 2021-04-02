@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.3;
 
-import "./OracleGetter.sol";
+import "../OracleGetter.sol";
 
-contract MockOracle is ITellor {
+contract MockOracle {
     event Transfer(address indexed from, address indexed to, uint256 value);
     event Approval(
         address indexed owner,
@@ -269,7 +269,6 @@ contract MockOracle is ITellor {
     function retrieveData(uint256 _requestId, uint256 _timestamp)
         public
         view
-        override
         returns (uint256)
     {
         return values[_requestId][_timestamp];
@@ -297,7 +296,6 @@ contract MockOracle is ITellor {
     function getNewValueCountbyRequestId(uint256 _requestId)
         public
         view
-        override
         returns (uint256)
     {
         return timestamps[_requestId].length;
@@ -312,7 +310,6 @@ contract MockOracle is ITellor {
     function getTimestampbyRequestIDandIndex(uint256 _requestId, uint256 index)
         public
         view
-        override
         returns (uint256)
     {
         uint256 len = timestamps[_requestId].length;

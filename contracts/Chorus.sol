@@ -7,6 +7,12 @@ import "./Inflation.sol";
 
 import "hardhat/console.sol";
 
+/** 
+ @author Tellor Inc.
+ @title Chorus
+ @dev Chorus is a structure for issuing semi-stablecoins as community currencies
+**/
+// slither-disable-next-line missing-inheritance
 contract Chorus is Inflation, OracleGetter, ERC20 {
     event CollateralThreshold(uint256);
     event CollateralPriceAge(uint256);
@@ -29,6 +35,7 @@ contract Chorus is Inflation, OracleGetter, ERC20 {
         address to,
         uint256 collateralRatio
     );
+    event NewAdmin(address _newAdmin);
 
     address public admin = msg.sender;
     uint256 private tknPrice = 1e18;
@@ -78,14 +85,20 @@ contract Chorus is Inflation, OracleGetter, ERC20 {
         _;
     }
 
-    modifier within100e18Range(uint256 value) {
-        require(value > 0 && value < 100e18, "value not within allowed limits");
+    modifier within100e18Range(uint256 _value) {
+        require(_value > 0 && _value < 100e18, "value not within allowed limits");
         _;
     }
 
-    modifier within1e18Range(uint256 value) {
-        require(value > 0 && value <= 1e18, "value not within allowed limits");
+    modifier within1e18Range(uint256 _value) {
+        require(_value > 0 && _value <= 1e18, "value not within allowed limits");
         _;
+    }
+
+    function setAdmin(address _newAdmin) external onlyAdmin {
+        require(_newAdmin != address(0), "cannot send to the zero address");
+        admin = _newAdmin;
+        emit NewAdmin(_newAdmin);
     }
 
     function depositCollateral(uint256 wad) external onlyAdmin {
@@ -108,7 +121,7 @@ contract Chorus is Inflation, OracleGetter, ERC20 {
                 sub(collateralToken.balanceOf(address(this)), wad),
                 totalSupply()
             );
-        // slither-disable-next-line reentrancy-events
+        // slither-disable-next-line missing-inheritance
         emit WithdrawCollateral(msg.sender, wad, cRatio);
         require(
             cRatio < collateralThreshold,
@@ -197,9 +210,7 @@ contract Chorus is Inflation, OracleGetter, ERC20 {
         uint256 secsPassed = block.timestamp - inflLastUpdate;
         uint256 tokenSupplyWithInflInterest =
             accrueInterest(_tSupply, inflRatePerSec, secsPassed);
-
         uint256 tokenValue = wmul(tokenPrice(), tokenSupplyWithInflInterest);
-
         return add(1e18, wdiv(tokenValue, collateralValue));
     }
 

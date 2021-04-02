@@ -1,23 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.3;
 
-interface ITellor {
-    function getNewValueCountbyRequestId(uint256 _requestId)
-        external
-        view
-        returns (uint256);
+import "./interfaces/ITellor.sol";
 
-    function getTimestampbyRequestIDandIndex(uint256 _requestID, uint256 _index)
-        external
-        view
-        returns (uint256);
-
-    function retrieveData(uint256 _requestId, uint256 _timestamp)
-        external
-        view
-        returns (uint256);
-}
-
+/** 
+ @author Tellor Inc.
+ @title OracleGetter
+ @dev a way to access Tellor variables
+**/
 contract OracleGetter {
     ITellor private tellor;
 
