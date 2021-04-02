@@ -1,3 +1,5 @@
 # filterBlacklist: false
 # filterFunctions: ["ChorusTest.mintToken(uint256,address)"]
 # seqLen: 2
+stopOnFail: true
+testLimit: 200
