@@ -308,7 +308,7 @@ contract ERC20 is IERC20 {
 
 // The contract is also an ERC20 token which holds the collateral currency.
 // It also holds the semi stable token state inside the `token` variable.
-contract Token is ERC20 {
+contract Mintable is ERC20 {
     function burn(address account, uint256 amount) external {
         _burn(account, amount);
     }

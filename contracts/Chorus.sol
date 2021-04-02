@@ -5,8 +5,6 @@ import "./OracleGetter.sol";
 import "./ERC20.sol";
 import "./Inflation.sol";
 
-import "hardhat/console.sol";
-
 contract Chorus is Inflation, OracleGetter, ERC20 {
     event CollateralThreshold(uint256);
     event CollateralPriceAge(uint256);
@@ -103,17 +101,17 @@ contract Chorus is Inflation, OracleGetter, ERC20 {
     // Otherwise lets say a provider deposits 1ETH and mints all tokens to himself
     // can drain the collateral of all providers.
     function withdrawCollateral(uint256 wad) external onlyAdmin {
-        uint256 cRatio =
-            _collateralRatio(
-                sub(collateralToken.balanceOf(address(this)), wad),
-                totalSupply()
-            );
-        // slither-disable-next-line reentrancy-events
-        emit WithdrawCollateral(msg.sender, wad, cRatio);
-        require(
-            cRatio < collateralThreshold,
-            "collateral utilization above the threshold"
-        );
+        // uint256 cRatio =
+        //     _collateralRatio(
+        //         sub(collateralToken.balanceOf(address(this)), wad),
+        //         totalSupply()
+        //     );
+        // // slither-disable-next-line reentrancy-events
+        // emit WithdrawCollateral(msg.sender, wad, cRatio);
+        // require(
+        //     cRatio < collateralThreshold,
+        //     "collateral utilization above the threshold"
+        // );
         require(
             collateralToken.transfer(msg.sender, wad),
             "collateral transfer fails"
