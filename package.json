@@ -38,7 +38,6 @@
   "dependencies": {
     "dotenv": "^8.2.0",
     "ethers": "^5.0.23",
-    "openzeppelin-solidity": "github:OpenZeppelin/openzeppelin-contracts#master",
-    "typescript": "^4.2.3"
+    "openzeppelin-solidity": "github:OpenZeppelin/openzeppelin-contracts#master"
   }
 }
