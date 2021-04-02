@@ -12,6 +12,7 @@ import "hardhat/console.sol";
  @title Chorus
  @dev Chorus is a structure for issuing semi-stablecoins as community currencies
 **/
+// slither-disable-next-line missing-inheritance
 contract Chorus is Inflation, OracleGetter, ERC20 {
     event CollateralThreshold(uint256);
     event CollateralPriceAge(uint256);
@@ -120,7 +121,7 @@ contract Chorus is Inflation, OracleGetter, ERC20 {
                 sub(collateralToken.balanceOf(address(this)), wad),
                 totalSupply()
             );
-        // slither-disable-next-line reentrancy-events
+        // slither-disable-next-line missing-inheritance
         emit WithdrawCollateral(msg.sender, wad, cRatio);
         require(
             cRatio < collateralThreshold,

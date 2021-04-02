@@ -2,7 +2,7 @@
 pragma solidity 0.8.3;
 
 import "../ERC20.sol";
-
+// slither-disable-next-line missing-inheritance
 interface InterfaceChorus {
     event CollateralThreshold(uint256);
     event CollateralPriceAge(uint256);
