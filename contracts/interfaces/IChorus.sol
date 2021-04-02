@@ -3,7 +3,7 @@ pragma solidity 0.8.3;
 
 import "../ERC20.sol";
 
-interface IChorus {
+interface InterfaceChorus {
     event CollateralThreshold(uint256);
     event CollateralPriceAge(uint256);
     event LiquidationPenatly(uint256);
