@@ -31,11 +31,14 @@
     "hardhat-deploy-ethers": "^0.3.0-beta.7",
     "hardhat-gas-reporter": "^1.0.3",
     "hardhat-log-remover": "^2.0.0",
+    "prettier": "^2.2.1",
+    "prettier-plugin-solidity": "^1.0.0-beta.7",
     "tellorplayground": "github:tellor-io/tellorplayground#main"
   },
   "dependencies": {
     "dotenv": "^8.2.0",
     "ethers": "^5.0.23",
-    "openzeppelin-solidity": "github:OpenZeppelin/openzeppelin-contracts#master"
+    "openzeppelin-solidity": "github:OpenZeppelin/openzeppelin-contracts#master",
+    "typescript": "^4.2.3"
   }
 }

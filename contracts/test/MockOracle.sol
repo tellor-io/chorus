@@ -3,7 +3,7 @@ pragma solidity 0.8.3;
 
 import "../OracleGetter.sol";
 
-contract MockOracle{
+contract MockOracle {
     event Transfer(address indexed from, address indexed to, uint256 value);
     event Approval(
         address indexed owner,

@@ -3,6 +3,11 @@ pragma solidity 0.8.3;
 
 import "./interfaces/ITellor.sol";
 
+/** 
+ @author Tellor Inc.
+ @title OracleGetter
+ @dev a way to access Tellor variables
+**/
 contract OracleGetter {
     ITellor private tellor;
 

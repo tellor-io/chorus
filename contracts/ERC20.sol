@@ -4,14 +4,15 @@ pragma solidity 0.8.3;
 
 import "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
 
-// Taken from Openzeppeling implementation, but stripping Context.sol
+/** 
+ @author Open Zeppelin
+ @title ERC20
+ @dev Taken from OZ, but no context
+**/
 contract ERC20 is IERC20 {
     mapping(address => uint256) private _balances;
-
     mapping(address => mapping(address => uint256)) private _allowances;
-
     uint256 private _totalSupply;
-
     string private _name;
     string private _symbol;
     uint8 private _decimals;

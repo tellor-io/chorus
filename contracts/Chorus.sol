@@ -7,6 +7,11 @@ import "./Inflation.sol";
 
 import "hardhat/console.sol";
 
+/** 
+ @author Tellor Inc.
+ @title Chorus
+ @dev Chorus is a structure for issuing semi-stablecoins as community currencies
+**/
 contract Chorus is Inflation, OracleGetter, ERC20 {
     event CollateralThreshold(uint256);
     event CollateralPriceAge(uint256);
@@ -88,11 +93,10 @@ contract Chorus is Inflation, OracleGetter, ERC20 {
         _;
     }
 
-    function setAdmin(address _newAdmin) external onlyAdmin{
+    function setAdmin(address _newAdmin) external onlyAdmin {
         admin = _newAdmin;
     }
 
-    
     function depositCollateral(uint256 wad) external onlyAdmin {
         require(wad > 0, "deposit amount 0");
         require(
@@ -202,9 +206,7 @@ contract Chorus is Inflation, OracleGetter, ERC20 {
         uint256 secsPassed = block.timestamp - inflLastUpdate;
         uint256 tokenSupplyWithInflInterest =
             accrueInterest(_tSupply, inflRatePerSec, secsPassed);
-
         uint256 tokenValue = wmul(tokenPrice(), tokenSupplyWithInflInterest);
-
         return add(1e18, wdiv(tokenValue, collateralValue));
     }
 

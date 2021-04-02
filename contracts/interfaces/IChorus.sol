@@ -27,28 +27,65 @@ interface IChorus {
     );
 
     function setAdmin(address _newAdmin) external;
+
     function depositCollateral(uint256 wad) external;
+
     function withdrawCollateral(uint256 wad) external;
+
     function liquidate() external;
-    function updateInflation() external; 
+
+    function updateInflation() external;
+
     function collateralRatio() external view returns (uint256);
+
     function collateralPrice() external view returns (uint256);
+
     function setCollateralThreshold(uint256 wad) external;
+
     function setCollateralPriceAge(uint256 wad) external;
+
     function setLiquidationPenatly(uint256 wad) external;
-    function mintToken(uint256 amount, address to) external; 
+
+    function mintToken(uint256 amount, address to) external;
+
     function tokenPrice() external view returns (uint256);
+
     function collateralBalance() external view returns (uint256);
+
     function withdrawToken(uint256 amount) external;
+
     function name() external view returns (string memory);
+
     function symbol() external view returns (string memory);
+
     function decimals() external view returns (uint8);
+
     function totalSupply() external view returns (uint256);
+
     function balanceOf(address account) external view returns (uint256);
-    function transfer(address recipient, uint256 amount) external returns (bool);
-    function allowance(address owner, address spender) external view returns (uint256);
+
+    function transfer(address recipient, uint256 amount)
+        external
+        returns (bool);
+
+    function allowance(address owner, address spender)
+        external
+        view
+        returns (uint256);
+
     function approve(address spender, uint256 amount) external returns (bool);
-    function transferFrom(address sender,address recipient,uint256 amount) external returns (bool); 
-    function increaseAllowance(address spender, uint256 addedValue) external returns (bool);
-    function decreaseAllowance(address spender, uint256 subtractedValue) external returns (bool);
+
+    function transferFrom(
+        address sender,
+        address recipient,
+        uint256 amount
+    ) external returns (bool);
+
+    function increaseAllowance(address spender, uint256 addedValue)
+        external
+        returns (bool);
+
+    function decreaseAllowance(address spender, uint256 subtractedValue)
+        external
+        returns (bool);
 }
