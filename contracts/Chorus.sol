@@ -271,6 +271,7 @@ contract Chorus is Inflation, OracleGetter, ERC20 {
             _cRatio < collateralThreshold,
             "collateral utilization above the threshold"
         );
+        // slither-disable-next-line reentrancy-events
         emit WithdrawCollateral(msg.sender, _amount, _cRatio);
     }
 
@@ -286,10 +287,10 @@ contract Chorus is Inflation, OracleGetter, ERC20 {
         uint256 _collateralAmnt = wmul(_priceRatio, _amount);
         _burn(msg.sender, _amount);
         require(
-            // slither-disable-next-line
             collateralToken.transfer(msg.sender, _collateralAmnt),
             "collateral transfer fail"
         );
+        // slither-disable-next-line reentrancy-events
         emit WithdrawToken(msg.sender, _amount, _collateralAmnt);
     }
 }
