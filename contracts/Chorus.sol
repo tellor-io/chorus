@@ -117,6 +117,7 @@ contract Chorus is Inflation, OracleGetter, ERC20 {
      */
     function collateralRatio() public view returns (uint256) {
         uint256 _collateralBalance = collateralToken.balanceOf(address(this));
+        // slither-disable-next-line dangerous-strict-equalities
         if(totalSupply() == 0 || _collateralBalance == 0) {
             return 0;
         }
