@@ -44,7 +44,7 @@ contract Chorus is Inflation, OracleGetter, ERC20 {
     uint256 public collateralID; // The collateral id used to check the Tellor oracle for its USD price.
     uint256 public collateralPriceGranularity;
     uint256 public collateralThreshold = 15e17; // 150%.
-    uint256 public collateralPriceAge = 3600; // 1h.
+    uint256 public collateralPriceAge = 3600; // e.g. 1hr.  This is the delay in the feed from Tellor
     uint256 public liquidationPenatly = 0;
     uint256 public inflRatePerSec;// The rate at which the token decreases value. 1e18 precision. 100e18 is 100%.
     uint256 public inflLastUpdate = block.timestamp;
@@ -92,6 +92,14 @@ contract Chorus is Inflation, OracleGetter, ERC20 {
     }
 
     /**
+     * @dev Returns the current token price in USD reduced by the current inflation.
+     * @return uint256 token price
+     */
+    function collateralBalance() external view returns (uint256) {
+        return collateralToken.balanceOf(address(this));
+    }
+
+    /**
      * @dev Checks the Tellor oracle and gets the collateral price
      * @return uint256 collateral price in USD upscaled to e18 precision.
      */
@@ -108,11 +116,15 @@ contract Chorus is Inflation, OracleGetter, ERC20 {
      * @return uint256 collateral token balance of this address / totalSupply
      */
     function collateralRatio() public view returns (uint256) {
-        return
-            _collateralRatio(
-                collateralToken.balanceOf(address(this)),
-                totalSupply()
-            );
+        uint256 _collateralBalance = collateralToken.balanceOf(address(this));
+        if(totalSupply() == 0 || _collateralBalance == 0) {
+            return 0;
+        }
+        uint256 _collateralValue = wmul(collateralPrice(), _collateralBalance);
+        uint256 tokenSupplyWithInflInterest =
+            accrueInterest(totalSupply(), inflRatePerSec, block.timestamp - inflLastUpdate);
+        uint256 _tokenValue = wmul(tokenPrice(), tokenSupplyWithInflInterest);
+        return add(1e18, wdiv(_tokenValue, _collateralValue));
     }
 
     /**
@@ -154,6 +166,21 @@ contract Chorus is Inflation, OracleGetter, ERC20 {
     }
 
     /**
+     * @dev Allows the admin to mint tokens up to the collateral threshold
+     * @param _amount the amount of collateral tokens to mint
+     * @param _to   the address to mint them to;
+     */
+    function mintToken(uint256 _amount, address _to) external onlyAdmin {
+        _mint(_to, _amount);
+        uint256 _cRatio = collateralRatio();
+        require(
+            _cRatio < collateralThreshold,
+            "collateral utilization above the threshold"
+        );
+        emit MintTokens(msg.sender, _amount, _to, _cRatio);
+    }
+
+    /**
      * @dev Allows the user to set a new admin address
      * @param _newAdmin the address of the new admin address
      */
@@ -164,10 +191,57 @@ contract Chorus is Inflation, OracleGetter, ERC20 {
     }
 
     /**
+     * @dev Allows the admin to set the collateral price Age (delay in feed from Tellor)
+     * @param _amount the amount of delay in the price feed (we want to wait for disputes)
+     */
+    function setCollateralPriceAge(uint256 _amount) external onlyAdmin {
+        collateralPriceAge = _amount;
+        emit CollateralPriceAge(_amount);
+    }
+
+    /**
+     * @dev Allows the admin to set the Collateral threshold
+     * @param _amount new collateral threshold
+     */
+    function setCollateralThreshold(uint256 _amount)
+        external
+        onlyAdmin
+        within100e18Range(_amount)
+    {
+        collateralThreshold = _amount;
+        emit CollateralThreshold(_amount);
+    }
+    
+    /**
+     * @dev Allows the admin to set the liquidation penalty
+     * @param _amount the amount of the liquidation penalty
+     */
+    function setLiquidationPenatly(uint256 _amount)
+        external
+        onlyAdmin
+        within100e18Range(_amount)
+    {
+        liquidationPenatly = wdiv(_amount, 100e18); // Convert to a fraction.
+        emit LiquidationPenatly(liquidationPenatly);
+    }
+
+    /**
+     * @dev Returns the current token price in USD reduced by the current inflation.
+     * @return uint256 token price
+     */
+    function tokenPrice() public view returns (uint256) {
+        return
+            accrueInflation(
+                tknPrice,
+                inflRatePerSec,
+                block.timestamp - inflLastUpdate
+            );
+    }
+    
+    /**
      * @dev Function to reduce token price by the inflation rate,
      * increases the total supply by the inflation rate and
      * sends the new tokens to the inflation beneficiary.
-     * @param _newAdmin the address of the new admin address
      */
     // slither-disable-next-line timestamp
     function updateInflation() external {
@@ -188,115 +262,32 @@ contract Chorus is Inflation, OracleGetter, ERC20 {
      * @param _amount the amount of collateral token to deposit
      */
     function withdrawCollateral(uint256 _amount) external onlyAdmin {
-        uint256 _cRatio =
-            _collateralRatio(
-                sub(collateralToken.balanceOf(address(this)), _amount),
-                totalSupply()
-            );
-        // slither-disable-next-line missing-inheritance
-        emit WithdrawCollateral(msg.sender, _amount, _cRatio);
-        require(
-            _cRatio < collateralThreshold,
-            "collateral utilization above the threshold"
-        );
         require(
             collateralToken.transfer(msg.sender, _amount),
             "collateral transfer fails"
         );
-    }
-
-    /*Internal Functions*/
-    /**
-     * @dev Internal function to return and check the collateral ratio
-     * @param _collateralBalance balance of collateral in this contract
-     * @param _tSupply totalSupply of the contract
-     */
-     //?? SEE IF WE CAN TAKE OUT
-    function _collateralRatio(uint256 _collateralBalance, uint256 _tSupply)
-        internal
-        view
-        returns (uint256)
-    {
-        require(_collateralBalance > 0, "collateral total supply is zero");
-        if (_tSupply == 0) {
-            return 0;
-        }
-        uint256 _collateralValue = wmul(collateralPrice(), _collateralBalance);
-        uint256 tokenSupplyWithInflInterest =
-            accrueInterest(_tSupply, inflRatePerSec, block.timestamp - inflLastUpdate);
-        uint256 _tokenValue = wmul(tokenPrice(), tokenSupplyWithInflInterest);
-        return add(1e18, wdiv(_tokenValue, _collateralValue));
-    }
-
-    // WARNING You would usually want to put this through a vote from the token holders
-    // or the collateral provider can set it very low and drain all collateral.
-    // Usually the owner should be another contract so that
-    // it is allowed to change it only after a vote from the token holders.
-    function setCollateralThreshold(uint256 wad)
-        external
-        onlyAdmin
-        within100e18Range(wad)
-    {
-        collateralThreshold = wad;
-        emit CollateralThreshold(wad);
-    }
-
-    function setCollateralPriceAge(uint256 wad) external onlyAdmin {
-        collateralPriceAge = wad;
-        emit CollateralPriceAge(wad);
-    }
-
-    // WARNING You would usually want to put this through a vote from the token holders
-    // or the admin can set it at 100% and during liquidation token holders will not receive any collateral.
-    function setLiquidationPenatly(uint256 wad)
-        external
-        onlyAdmin
-        within100e18Range(wad)
-    {
-        liquidationPenatly = wdiv(wad, 100e18); // Convert to a fraction.
-        emit LiquidationPenatly(liquidationPenatly);
-    }
-
-    // The max minted tokens can be up to the max utulization threshold.
-    // Noone should be allowed to mint above the utilizationThreshold otherwise can drain the pool.
-    function mintToken(uint256 amount, address to) external onlyAdmin {
-        _mint(to, amount);
-        uint256 cRatio = collateralRatio();
-        // slither-disable-next-line reentrancy-events
-        emit MintTokens(msg.sender, amount, to, cRatio);
+        uint256 _cRatio = collateralRatio();
         require(
-            cRatio < collateralThreshold,
+            _cRatio < collateralThreshold,
             "collateral utilization above the threshold"
         );
+        emit WithdrawCollateral(msg.sender, _amount, _cRatio);
     }
 
-    // Returns the current token price in USD reduced by the current inflation.
-    function tokenPrice() public view returns (uint256) {
-        return
-            accrueInflation(
-                tknPrice,
-                inflRatePerSec,
-                block.timestamp - inflLastUpdate
-            );
-    }
-
-    function collateralBalance() external view returns (uint256) {
-        return collateralToken.balanceOf(address(this));
-    }
-
-    function withdrawToken(uint256 amount) external {
-        require(amount > 0, "amount should be greater than 0");
-        require(balanceOf(msg.sender) >= amount, "not enough balance");
-
-        uint256 collatPrice = collateralPrice();
-        uint256 priceRatio = wdiv(tokenPrice(), collatPrice);
-        uint256 collateralAmnt = wmul(priceRatio, amount);
-
-        emit WithdrawToken(msg.sender, amount, collateralAmnt);
-        _burn(msg.sender, amount);
-
+    /**
+     * @dev Allows a user to withdraw tokens
+     * @param _amount the amount of tokens to withdraw
+     */
+    function withdrawToken(uint256 _amount) external {
+        require(_amount > 0, "amount should be greater than 0");
+        require(balanceOf(msg.sender) >= _amount, "not enough balance");
+        uint256 _collatPrice = collateralPrice();
+        uint256 _priceRatio = wdiv(tokenPrice(), _collatPrice);
+        uint256 _collateralAmnt = wmul(_priceRatio, _amount);
+        emit WithdrawToken(msg.sender, _amount, _collateralAmnt);
+        _burn(msg.sender, _amount);
         require(
-            collateralToken.transfer(msg.sender, collateralAmnt),
+            collateralToken.transfer(msg.sender, _collateralAmnt),
             "collateral transfer fail"
         );
     }

@@ -117,15 +117,11 @@ describe("All tests", function () {
     await testee.depositCollateral(collateralDeposit * precision)
     expect(await collateral.balanceOf(testee.address)).to.equal(collateralDeposit * precision)
     expect(await testee.collateralRatio()).to.equal(0)
-
     let tokensMinted = 499n;
     await testee.mintToken(tokensMinted * precision, acc1.address)
-
     expect(tokensMinted).to.equal(BigInt(await testee.totalSupply()) / precision)
-
     let totalTokenValue = Number(tokensMinted) * tokenPrice
     let collateralValue = collateralDeposit * BigInt(collateralPrice) * precision
-
     let expcollateralRatio = 100 + (totalTokenValue / Number(collateralValue) * 100)
     let actcollateralRatio = (Number(await testee.collateralRatio()) / Number(precision) * 100)
     expect(expcollateralRatio).to.equal(actcollateralRatio)
