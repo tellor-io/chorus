@@ -52,6 +52,7 @@ contract OracleGetter {
      * @param _requestId requestID for Tellor data feed
      * @param _timestamp timestamp of request
      */
+    /* solhint-disable */
     function _getIndexForDataBefore(uint256 _requestId, uint256 _timestamp)
         internal
         view

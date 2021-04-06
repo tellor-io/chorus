@@ -286,6 +286,7 @@ contract Chorus is Inflation, OracleGetter, ERC20 {
         uint256 _collateralAmnt = wmul(_priceRatio, _amount);
         emit WithdrawToken(msg.sender, _amount, _collateralAmnt);
         _burn(msg.sender, _amount);
+        // slither-disable-next-line
         require(
             collateralToken.transfer(msg.sender, _collateralAmnt),
             "collateral transfer fail"
