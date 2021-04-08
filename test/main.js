@@ -237,24 +237,23 @@ describe("All tests", function () {
 
       let tknPrice = Number(accrueInflation(tokenPrice, secsPassed))
       let collatPrice = Number(BigInt(collateralPrice) * precision)
-
-      await testee.connect(account).withdrawToken(withdrawCount * precision);
+      await testee.connect(account).requestWithdrawToken(withdrawCount * precision);
+      let ts = await testee.totalSupply()
+      evmCurrentBlockTime += 86400 + 86400 * Number(withdrawCount * precision) / Number(ts) / 5;
+      await waffle.provider.send("evm_setNextBlockTimestamp", [evmCurrentBlockTime]);
+      await testee.connect(account).withdrawToken();
       expect(await testee.balanceOf(account.address)).to.equal((mintedTokens) * precision);
-
       let priceRatio = tknPrice / collatPrice
       expCollateralWithdrawn += Number(priceRatio * Number(withdrawCount * precision))
       let actCollateralWithdrawn = Number(await collateral.balanceOf(account.address))
-
       // There is a rounding error so ignore the difference after the rounding error.
       // The total precision is enough that this rounding shouldn't matter.
       expect(actCollateralWithdrawn).to.be.closeTo(expCollateralWithdrawn, 70000000000)
       expect(Number(await testee.collateralBalance())).to.be.closeTo(Number(collateralDeposit * precision - BigInt(expCollateralWithdrawn)), 70000000000);
     }
-
     await expect(testee.withdrawToken(1n), "withdraw tokens when balance should be zero").to.be.reverted
   })
 });
-
 
 // `beforeEach` will run before each test, re-deploying the contract every
 // time. It receives a callback, which can be async.

@@ -14,30 +14,35 @@ import "hardhat/console.sol";
 // slither-disable-next-line missing-inheritance
 contract Chorus is Inflation, OracleGetter, ERC20 {
     /*Events*/
-    event CollateralThreshold(uint256);//emits if collateral threshold changes
-    event CollateralPriceAge(uint256);//emits if collateral price age changes
+    event CollateralThreshold(uint256 _collateralThreshold);//emits if collateral threshold changes
+    event CollateralPriceAge(uint256 _collateralPriceAge);//emits if collateral price age changes
     event Liquidate(
-        address,
-        uint256 tokensAmnt,
-        uint256 collateralAmnt,
-        uint256 collateralPenalty
+        address _party,
+        uint256 _tokensAmnt,
+        uint256 _collateralAmnt,
+        uint256 _collateralPenalty
     );//emits upon a liquidation
-    event LiquidationPenatly(uint256);//emits when the liquidation penalty changes
-    event WithdrawCollateral(
-        address,
-        uint256 collateralAmnt,
-        uint256 collateralRatio
-    );//emits when collateral is withdrawn
-    event WithdrawToken(address, uint256 tokenAmnt, uint256 collateralAmnt);//emits when tokens are withdrawn
+    event LiquidationPenatly(uint256 _newPenalty);//emits when the liquidation penalty changes
     event MintTokens(
-        address,
-        uint256 amount,
-        address to,
-        uint256 collateralRatio
+        address _holder,
+        uint256 _amount,
+        address _to,
+        uint256 _collateralRatio
     );//emits when new tokens are minted
     event NewAdmin(address _newAdmin);//emits when a new admin is set
+    event WithdrawCollateral(
+        address _holder,
+        uint256 _collateralAmnt,
+        uint256 _collateralRatio
+    );//emits when collateral is withdrawn
+    event WithdrawToken(address _holder, uint256 _tokenAmnt, uint256 _collateralAmnt);//emits when tokens are withdrawn
+    event WithdrawTokenRequest(address _user, uint256 _amount);
     
     /*Variables*/
+    struct WithdrawDetails{
+        uint256 amount;
+        uint256 requestDate;
+    }
     ERC20 public collateralToken;
     address public admin = msg.sender;
     uint256 private tknPrice = 1e18;
@@ -49,6 +54,7 @@ contract Chorus is Inflation, OracleGetter, ERC20 {
     uint256 public inflRatePerSec;// The rate at which the token decreases value. 1e18 precision. 100e18 is 100%.
     uint256 public inflLastUpdate = block.timestamp;
     address public inflBeneficiary; // Where to send the inflation tokens.
+    mapping(address => WithdrawDetails) withdrawRequested;
 
     /*Modifiers*/
     modifier onlyAdmin {
@@ -181,6 +187,19 @@ contract Chorus is Inflation, OracleGetter, ERC20 {
         emit MintTokens(msg.sender, _amount, _to, _cRatio);
     }
 
+     /**
+     * @dev Allows a user to request to withdraw tokens
+     * @param _amount the amount of tokens to withdraw
+     */
+    function requestWithdrawToken(uint256 _amount) external {
+        require(_amount > 0, "amount should be greater than 0");
+        require(balanceOf(msg.sender) >= _amount, "not enough balance");
+        withdrawRequested[msg.sender].requestDate = block.timestamp;
+        withdrawRequested[msg.sender].amount = _amount;
+        _transfer(msg.sender, address(this), _amount);
+        emit WithdrawTokenRequest(msg.sender, _amount);
+    }
+
     /**
      * @dev Allows the user to set a new admin address
      * @param _newAdmin the address of the new admin address
@@ -278,15 +297,18 @@ contract Chorus is Inflation, OracleGetter, ERC20 {
 
     /**
      * @dev Allows a user to withdraw tokens
-     * @param _amount the amount of tokens to withdraw
      */
-    function withdrawToken(uint256 _amount) external {
+    function withdrawToken() external {
+        WithdrawDetails memory wd = withdrawRequested[msg.sender];
+        uint256 _amount = withdrawRequested[msg.sender].amount;
         require(_amount > 0, "amount should be greater than 0");
-        require(balanceOf(msg.sender) >= _amount, "not enough balance");
+        uint256 _waitPeriod = 1 + 100 * _amount / totalSupply() / 5; //increases by 1 day for every 5 percent
+        require(block.timestamp - wd.requestDate > 86400 * _waitPeriod, "must wait a to withdraw");
+        withdrawRequested[msg.sender].amount = 0;
         uint256 _collatPrice = collateralPrice();
         uint256 _priceRatio = wdiv(tokenPrice(), _collatPrice);
         uint256 _collateralAmnt = wmul(_priceRatio, _amount);
-        _burn(msg.sender, _amount);
+        _burn(address(this), _amount);
         require(
             collateralToken.transfer(msg.sender, _collateralAmnt),
             "collateral transfer fail"
