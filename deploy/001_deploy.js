@@ -18,7 +18,7 @@ const func = async function (hre) {
     const contract = await deploy('Chorus', {
         from: deployer,
         log: true,
-        deterministicDeployment: true,
+        deterministicDeployment: false,
         args: [
             "0x88dF592F8eb5D7Bd38bFeF7dEb0fBc02cf3778a0", // The oracle address.
             process.env.COLLATERAL_ADDRESS,
