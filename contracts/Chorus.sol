@@ -303,7 +303,7 @@ contract Chorus is Inflation, OracleGetter, ERC20 {
         uint256 _amount = withdrawRequested[msg.sender].amount;
         require(_amount > 0, "amount should be greater than 0");
         uint256 _waitPeriod = 1 + 100 * _amount / totalSupply() / 5; //increases by 1 day for every 5 percent
-        require(block.timestamp - wd.requestDate > 86400 * _waitPeriod, "must wait a to withdraw");
+        require(block.timestamp - wd.requestDate >= 86400 * _waitPeriod, "must wait to withdraw");
         withdrawRequested[msg.sender].amount = 0;
         uint256 _collatPrice = collateralPrice();
         uint256 _priceRatio = wdiv(tokenPrice(), _collatPrice);
