@@ -11,7 +11,7 @@ import "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
 contract ERC20 is IERC20 {
     mapping(address => uint256) private _balances;
     mapping(address => mapping(address => uint256)) private _allowances;
-    address payable whitelistAdmin;
+    address whitelistAdmin;
     bool public isWhitelistedSystem;
     mapping(address => uint) public whitelistedAmount;
     uint256 private _totalSupply;
@@ -19,11 +19,8 @@ contract ERC20 is IERC20 {
     string private _symbol;
     uint8 private _decimals;
 
-    /*Modifiers*/
-    modifier onlyWhitelistAdmin {
-        require(msg.sender == admin, "not an admin");
-        _;
-    }
+    event NewWhitelistAdmin(address _newAdmin);
+    event NewWhitelistedAmount(address _user, uint256 _amount);
 
     /**
      * @dev Sets the values for {name} and {symbol}, initializes {decimals} with
@@ -44,7 +41,8 @@ contract ERC20 is IERC20 {
      * @dev Allows the user to set a new admin address
      * @param _newAdmin the address of the new admin address
      */
-    function setWhitelistAdmin(address _newAdmin) external onlyAdmin {
+    function setWhitelistAdmin(address _newAdmin) external {
+         require(msg.sender == whitelistAdmin, "not the whitelist admin");
         require(_newAdmin != address(0), "cannot send to the zero address");
         whitelistAdmin = _newAdmin;
         emit NewWhitelistAdmin(_newAdmin);
@@ -53,7 +51,7 @@ contract ERC20 is IERC20 {
     function setWhitelistedAmount(address _user, uint256 _amount) external{
             require(msg.sender == whitelistAdmin, "not the whitelist admin");
             whitelistedAmount[_user] = _amount;
-            emit NewWhitelistAmount(_user,_amount);
+            emit NewWhitelistedAmount(_user,_amount);
     }
 
     /**
@@ -223,7 +221,7 @@ contract ERC20 is IERC20 {
     ) internal virtual {
         require(sender != address(0), "ERC20: transfer from the zero address");
         require(recipient != address(0), "ERC20: transfer to the zero address");
-        if (whitelistedSystem){
+        if (isWhitelistedSystem){
             require(_balances[recipient] + amount <= whitelistedAmount[recipient], "recipient not whitelisted for amount");
             require(_balances[sender] <= whitelistedAmount[sender], "sender not whitelisted for amount");
         }
@@ -290,19 +288,4 @@ contract ERC20 is IERC20 {
     function _setupDecimals(uint8 decimals_) internal virtual {
         _decimals = decimals_;
     }
-}
-
-// The contract is also an ERC20 token which holds the collateral currency.
-// It also holds the semi stable token state inside the `token` variable.
-contract Token is ERC20 {
-    function burn(address account, uint256 amount) external {
-        _burn(account, amount);
-    }
-
-    function mint(address account, uint256 amount) external {
-        _mint(account, amount);
-    }
-
-    // solhint-disable-next-line no-empty-blocks
-    constructor(string memory n, string memory s) ERC20(n, s) {}
 }

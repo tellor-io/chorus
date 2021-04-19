@@ -82,10 +82,11 @@ contract Chorus is Inflation, OracleGetter, ERC20 {
         string memory _tokenName,
         string memory _tokenSymbol,
         uint256 _inflRatePerYear,
-        address _inflBeneficiary
+        address _inflBeneficiary,
+        bool _isWhitelisted
     )
         OracleGetter(_tellorAddress)
-        ERC20(_tokenName, _tokenSymbol)
+        ERC20(_tokenName, _tokenSymbol,_isWhitelisted)
         within100e18Range(_inflRatePerYear)
     {
         collateralID = _collateralID;
