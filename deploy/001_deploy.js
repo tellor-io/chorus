@@ -28,10 +28,12 @@ const func = async function (hre) {
         console.log("MockOracle deployed to:", oracleAddress);
     }
 
+    console.log(process.env.DETERMINISTIC_DEPLOYMENT)
+
     const contract = await deploy('Chorus', {
         from: deployer,
         log: true,
-        deterministicDeployment: process.env.DETERMINISTIC_DEPLOYMENT,
+        deterministicDeployment: (process.env.DETERMINISTIC_DEPLOYMENT == "true") ? true : false,
         args: [
             oracleAddress,
             process.env.COLLATERAL_ADDRESS,
