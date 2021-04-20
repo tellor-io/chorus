@@ -5,7 +5,7 @@ pragma solidity 0.8.3;
 import "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
 
 /** 
- @author Open Zeppelin
+ @author Open Zeppelin / Tellor
  @title ERC20
  @dev Taken from OZ, but no context
 **/
@@ -20,9 +20,7 @@ contract ERC20 is IERC20 {
     /**
      * @dev Sets the values for {name} and {symbol}, initializes {decimals} with
      * a default value of 18.
-     *
      * To select a different value for {decimals}, use {_setupDecimals}.
-     *
      * All three of these values are immutable: they can only be set once during
      * construction.
      */
@@ -51,11 +49,9 @@ contract ERC20 is IERC20 {
      * @dev Returns the number of decimals used to get its user representation.
      * For example, if `decimals` equals `2`, a balance of `505` tokens should
      * be displayed to a user as `5,05` (`505 / 10 ** 2`).
-     *
      * Tokens usually opt for a value of 18, imitating the relationship between
      * Ether and Wei. This is the value {ERC20} uses, unless {_setupDecimals} is
      * called.
-     *
      * NOTE: This information is only used for _display_ purposes: it in
      * no way affects any of the arithmetic of the contract, including
      * {IERC20-balanceOf} and {IERC20-transfer}.
@@ -86,9 +82,7 @@ contract ERC20 is IERC20 {
 
     /**
      * @dev See {IERC20-transfer}.
-     *
      * Requirements:
-     *
      * - `recipient` cannot be the zero address.
      * - the caller must have a balance of at least `amount`.
      */
@@ -117,9 +111,7 @@ contract ERC20 is IERC20 {
 
     /**
      * @dev See {IERC20-approve}.
-     *
      * Requirements:
-     *
      * - `spender` cannot be the zero address.
      */
     function approve(address spender, uint256 amount)
@@ -134,12 +126,9 @@ contract ERC20 is IERC20 {
 
     /**
      * @dev See {IERC20-transferFrom}.
-     *
      * Emits an {Approval} event indicating the updated allowance. This is not
      * required by the EIP. See the note at the beginning of {ERC20}.
-     *
      * Requirements:
-     *
      * - `sender` and `recipient` cannot be the zero address.
      * - `sender` must have a balance of at least `amount`.
      * - the caller must have allowance for ``sender``'s tokens of at least
@@ -157,14 +146,10 @@ contract ERC20 is IERC20 {
 
     /**
      * @dev Atomically increases the allowance granted to `spender` by the caller.
-     *
      * This is an alternative to {approve} that can be used as a mitigation for
      * problems described in {IERC20-approve}.
-     *
      * Emits an {Approval} event indicating the updated allowance.
-     *
      * Requirements:
-     *
      * - `spender` cannot be the zero address.
      */
     function increaseAllowance(address spender, uint256 addedValue)
@@ -182,14 +167,10 @@ contract ERC20 is IERC20 {
 
     /**
      * @dev Atomically decreases the allowance granted to `spender` by the caller.
-     *
      * This is an alternative to {approve} that can be used as a mitigation for
      * problems described in {IERC20-approve}.
-     *
      * Emits an {Approval} event indicating the updated allowance.
-     *
      * Requirements:
-     *
      * - `spender` cannot be the zero address.
      * - `spender` must have allowance for the caller of at least
      * `subtractedValue`.
@@ -209,14 +190,10 @@ contract ERC20 is IERC20 {
 
     /**
      * @dev Moves tokens `amount` from `sender` to `recipient`.
-     *
      * This is internal function is equivalent to {transfer}, and can be used to
      * e.g. implement automatic token fees, slashing mechanisms, etc.
-     *
      * Emits a {Transfer} event.
-     *
      * Requirements:
-     *
      * - `sender` cannot be the zero address.
      * - `recipient` cannot be the zero address.
      * - `sender` must have a balance of at least `amount`.
@@ -236,16 +213,12 @@ contract ERC20 is IERC20 {
 
     /** @dev Creates `amount` tokens and assigns them to `account`, increasing
      * the total supply.
-     *
      * Emits a {Transfer} event with `from` set to the zero address.
-     *
      * Requirements:
-     *
      * - `to` cannot be the zero address.
      */
     function _mint(address account, uint256 amount) internal virtual {
         require(account != address(0), "ERC20: mint to the zero address");
-
         _totalSupply = _totalSupply + amount;
         _balances[account] = _balances[account] + amount;
         emit Transfer(address(0), account, amount);
@@ -254,17 +227,13 @@ contract ERC20 is IERC20 {
     /**
      * @dev Destroys `amount` tokens from `account`, reducing the
      * total supply.
-     *
      * Emits a {Transfer} event with `to` set to the zero address.
-     *
      * Requirements:
-     *
      * - `account` cannot be the zero address.
      * - `account` must have at least `amount` tokens.
      */
     function _burn(address account, uint256 amount) internal virtual {
         require(account != address(0), "ERC20: burn from the zero address");
-
         _balances[account] = _balances[account] - amount;
         _totalSupply = _totalSupply - amount;
         emit Transfer(account, address(0), amount);
@@ -272,14 +241,10 @@ contract ERC20 is IERC20 {
 
     /**
      * @dev Sets `amount` as the allowance of `spender` over the `owner` s tokens.
-     *
      * This internal function is equivalent to `approve`, and can be used to
      * e.g. set automatic allowances for certain subsystems, etc.
-     *
      * Emits an {Approval} event.
-     *
      * Requirements:
-     *
      * - `owner` cannot be the zero address.
      * - `spender` cannot be the zero address.
      */
@@ -297,7 +262,6 @@ contract ERC20 is IERC20 {
 
     /**
      * @dev Sets {decimals} to a value other than the default one of 18.
-     *
      * WARNING: This function should only be called from the constructor. Most
      * applications that interact with token contracts will not expect
      * {decimals} to ever change, and may work incorrectly if it does.

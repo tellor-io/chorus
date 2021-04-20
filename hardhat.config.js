@@ -1,8 +1,8 @@
 require("@nomiclabs/hardhat-waffle");
 require("dotenv").config();
 require("hardhat-gas-reporter");
-require('hardhat-log-remover');
-require('hardhat-deploy');
+require("hardhat-log-remover");
+require("hardhat-deploy");
 require("hardhat-deploy-ethers");
 
 task("accounts", "Prints the list of accounts", async () => {
@@ -17,11 +17,15 @@ task("accounts", "Prints the list of accounts", async () => {
  */
 module.exports = {
   gasReporter: {
-    enabled: (process.env.REPORT_GAS == "true") ? true : false
+    enabled: process.env.REPORT_GAS == "true" ? true : false,
   },
   defaultNetwork: "hardhat",
   networks: {
-    hardhat: {
+    hardhat: {},
+    localhost: {
+      url: `${process.env.NODE_TEST}`,
+      accounts: [process.env.PRIVATE_KEY],
+      explorer: "http://rinkeby.etherscan.io/address/",
     },
     // test: {
     //   url: `${process.env.NODE_TEST}`,
@@ -60,12 +64,11 @@ module.exports = {
   solidity: {
     compilers: [
       {
-        version: "0.8.3"
-      }
-    ]
+        version: "0.8.3",
+      },
+    ],
   },
   mocha: {
-    timeout: 600000 // 10mins test timeout.
-  }
+    timeout: 600000, // 10mins test timeout.
+  },
 };
-
