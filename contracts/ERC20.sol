@@ -11,7 +11,7 @@ import "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
 contract ERC20 is IERC20 {
     mapping(address => uint256) private _balances;
     mapping(address => mapping(address => uint256)) private _allowances;
-    address whitelistAdmin;
+    address public whitelistAdmin;
     bool public isWhitelistedSystem;
     mapping(address => uint) public whitelistedAmount;
     uint256 private _totalSupply;
@@ -238,6 +238,9 @@ contract ERC20 is IERC20 {
      */
     function _mint(address account, uint256 amount) internal virtual {
         require(account != address(0), "ERC20: mint to the zero address");
+        if (isWhitelistedSystem){
+            require(_balances[account] + amount <= whitelistedAmount[account], "recipient not whitelisted for amount");
+        }
         _totalSupply = _totalSupply + amount;
         _balances[account] = _balances[account] + amount;
         emit Transfer(address(0), account, amount);

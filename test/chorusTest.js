@@ -102,7 +102,7 @@ const setupTest = deployments.createFixture(async ({ deployments, getNamedAccoun
   return { oracle, collateral, chorus }
 });
 
-describe("All tests", function () {
+describe("Chorus tests", function () {
   it("Token Inflation", async function () {
     let collateralDeposit = 10n;
     await chorus.depositCollateral(collateralDeposit * precision)
