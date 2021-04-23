@@ -6,4 +6,4 @@ artifacts
 .env
 tmp
 
-deployments/localhost
+deployments

@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: MIT
-
 pragma solidity 0.8.3;
 
 import "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
@@ -12,10 +11,16 @@ import "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
 contract ERC20 is IERC20 {
     mapping(address => uint256) private _balances;
     mapping(address => mapping(address => uint256)) private _allowances;
+    address public whitelistAdmin;
+    bool public isWhitelistedSystem;
+    mapping(address => uint) public whitelistedAmount;
     uint256 private _totalSupply;
     string private _name;
     string private _symbol;
     uint8 private _decimals;
+
+    event NewWhitelistAdmin(address _newAdmin);
+    event NewWhitelistedAmount(address _user, uint256 _amount);
 
     /**
      * @dev Sets the values for {name} and {symbol}, initializes {decimals} with
@@ -24,10 +29,29 @@ contract ERC20 is IERC20 {
      * All three of these values are immutable: they can only be set once during
      * construction.
      */
-    constructor(string memory name_, string memory symbol_) {
+    constructor(string memory name_, string memory symbol_, bool _isWhitelistedSystem) {
         _name = name_;
         _symbol = symbol_;
         _decimals = 18;
+        isWhitelistedSystem = _isWhitelistedSystem;
+        whitelistAdmin = msg.sender;
+    }
+
+    /**
+     * @dev Allows the user to set a new admin address
+     * @param _newAdmin the address of the new admin address
+     */
+    function setWhitelistAdmin(address _newAdmin) external {
+         require(msg.sender == whitelistAdmin, "not the whitelist admin");
+        require(_newAdmin != address(0), "cannot send to the zero address");
+        whitelistAdmin = _newAdmin;
+        emit NewWhitelistAdmin(_newAdmin);
+    }
+
+    function setWhitelistedAmount(address _user, uint256 _amount) external{
+            require(msg.sender == whitelistAdmin, "not the whitelist admin");
+            whitelistedAmount[_user] = _amount;
+            emit NewWhitelistedAmount(_user,_amount);
     }
 
     /**
@@ -47,14 +71,6 @@ contract ERC20 is IERC20 {
 
     /**
      * @dev Returns the number of decimals used to get its user representation.
-     * For example, if `decimals` equals `2`, a balance of `505` tokens should
-     * be displayed to a user as `5,05` (`505 / 10 ** 2`).
-     * Tokens usually opt for a value of 18, imitating the relationship between
-     * Ether and Wei. This is the value {ERC20} uses, unless {_setupDecimals} is
-     * called.
-     * NOTE: This information is only used for _display_ purposes: it in
-     * no way affects any of the arithmetic of the contract, including
-     * {IERC20-balanceOf} and {IERC20-transfer}.
      */
     function decimals() public view virtual returns (uint8) {
         return _decimals;
@@ -205,7 +221,10 @@ contract ERC20 is IERC20 {
     ) internal virtual {
         require(sender != address(0), "ERC20: transfer from the zero address");
         require(recipient != address(0), "ERC20: transfer to the zero address");
-
+        if (isWhitelistedSystem){
+            require(_balances[recipient] + amount <= whitelistedAmount[recipient], "recipient not whitelisted for amount");
+            require(_balances[sender] <= whitelistedAmount[sender], "sender not whitelisted for amount");
+        }
         _balances[sender] = _balances[sender] - amount;
         _balances[recipient] = _balances[recipient] + amount;
         emit Transfer(sender, recipient, amount);
@@ -219,6 +238,9 @@ contract ERC20 is IERC20 {
      */
     function _mint(address account, uint256 amount) internal virtual {
         require(account != address(0), "ERC20: mint to the zero address");
+        if (isWhitelistedSystem){
+            require(_balances[account] + amount <= whitelistedAmount[account], "recipient not whitelisted for amount");
+        }
         _totalSupply = _totalSupply + amount;
         _balances[account] = _balances[account] + amount;
         emit Transfer(address(0), account, amount);
@@ -269,19 +291,4 @@ contract ERC20 is IERC20 {
     function _setupDecimals(uint8 decimals_) internal virtual {
         _decimals = decimals_;
     }
-}
-
-// The contract is also an ERC20 token which holds the collateral currency.
-// It also holds the semi stable token state inside the `token` variable.
-contract Token is ERC20 {
-    function burn(address account, uint256 amount) external {
-        _burn(account, amount);
-    }
-
-    function mint(address account, uint256 amount) external {
-        _mint(account, amount);
-    }
-
-    // solhint-disable-next-line no-empty-blocks
-    constructor(string memory n, string memory s) ERC20(n, s) {}
 }
