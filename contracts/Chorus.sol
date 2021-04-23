@@ -47,7 +47,7 @@ contract Chorus is Inflation, OracleGetter, ERC20 {
     address public admin = msg.sender;
     uint256 private tknPrice = 1e18;
     uint256 public collateralID; // The collateral id used to check the Tellor oracle for its USD price.
-    uint256 public collateralPriceGranularity;
+    uint256 public collateralPriceGranularity; //usually 1000000 in the Tellor system
     uint256 public collateralThreshold = 15e17; // 150%.
     uint256 public collateralPriceAge = 3600; // e.g. 1hr.  This is the delay in the feed from Tellor
     uint256 public liquidationPenatly = 0;
