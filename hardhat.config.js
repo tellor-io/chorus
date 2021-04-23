@@ -23,6 +23,11 @@ module.exports = {
   networks: {
     hardhat: {
     },
+    localhost: {
+      url: `${process.env.NODE_TEST}`,
+      accounts: [process.env.PRIVATE_KEY],
+      explorer: "http://rinkeby.etherscan.io/address/"
+    },
     // test: {
     //   url: `${process.env.NODE_TEST}`,
     //   accounts: [process.env.PRIVATE_KEY],
@@ -68,4 +73,3 @@ module.exports = {
     timeout: 600000 // 10mins test timeout.
   }
 };
-
