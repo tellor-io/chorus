@@ -2,13 +2,23 @@ const { expect } = require("chai")
 const { default: Decimal } = require("decimal.js");
 const { providers } = require("ethers");
 
-
+//eth addresses
 let owner, acc1, acc2, acc3, acc4, beneficiary; //eth accounts used by tests
 let oracle, chorus, collateralTkn; //eth contracts used by tests
 
+//contract constructor arguments
+const tokenPrecision = BigInt(1e18) //token contract float precision (standard)
+const collateralPrice = 100 //price of collateral token
+const oraclePricePrecision = 1e6 //precision of oracle's token price data
+const secsPerYear = 365*24*60*60
+const nominalInflationRateYear = 0.1 // 0.1 = 10%
+const effectiveInflationRate = nominaltoEffectiveInflation(new Decimal(nominalRateYear))
+const inflationRate = new Decimal(effectiveInflationRate).mul(1e18) //effective inflation rate (formatted for solidity)
+const inflationRatePerSec = ((inflRate / 1e10) / (secsPerYear * 10e7))
+const notePrice = 1e18
 
-//contract float precision
-const precision = BigInt(1e18)
+var evmCurrentBlockTime = Math.round((Number(new Date().getTime())) / 1000)
+
 
 /** 'beforeEach' will run before each test.
  *  
@@ -20,8 +30,15 @@ const precision = BigInt(1e18)
  * 
 */
 beforeEach(async function() {
+    //Using deployments.createFixture speeds up the tests as
+    //the reset is done with evm_revert
 
-}
+    //setup test contracts
+    let testContracts = await setupTest()
+    oracle = testContracts.oracle
+    collateralTkn = res.collateralTkn
+    chorus = res.chorus
+})
 
 const setupTest = deployments.createFixture(
     async ({ deployments, getNamedAccounts, ethers }, options) => {
@@ -52,7 +69,7 @@ const setupTest = deployments.createFixture(
                 oracleDepl.address,
                 collateralDepl.address,
                 1, 
-                collateralPriceGranularity,
+                collateralPricePrecision,
                 "Anthem", //anthem name (arbitrary)
                 "ANT", //anthem symbol (arbitrary)
                 BigInt(Math.floor(inflRate)).toString(),
@@ -71,10 +88,9 @@ const setupTest = deployments.createFixture(
         await waffle.provider.send("evm_mine")
         await collateral.mint(owner.address, 10n*precision)
         await collateral.increaseAllowance(chorus.address, BigInt(1e50))
-        return { oracle, collateralTkn, chorus}
-
-
-
+        //return test contracts
+        return { oracle, collateralTkn, chorus }
+})
 
 
 
