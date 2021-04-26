@@ -77,7 +77,7 @@ contract OracleGetter {
                     _middle
                 );
                 if (_time < _timestamp) {
-                    //get imeadiate next value
+                    //get immediate next value
                     uint256 _nextTime =
                         tellor.getTimestampbyRequestIDandIndex(
                             _requestId,
