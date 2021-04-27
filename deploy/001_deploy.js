@@ -10,7 +10,7 @@ const INFL_RATE_PER_YEAR=.1//10%
 const BENIFICIARY_ADDRESS="0x0d7EFfEFdB084DfEB1621348c8C70cc4e871Eba4"//a contract that gets the inflation in the system
 const DETERMINISTIC_DEPLOYMENT=true
 const IS_WHITELISTED_TOKEN = false
-const oracleAddress =  "0x88dF592F8eb5D7Bd38bFeF7dEb0fBc02cf3778a0";//Tellor address
+let oracleAddress =  "0x88dF592F8eb5D7Bd38bFeF7dEb0fBc02cf3778a0";//Tellor address
 const effRate = nominalToEffectiveInflation(new Decimal(INFL_RATE_PER_YEAR))
 const inflRate = new Decimal(effRate).mul(1e18)
 
