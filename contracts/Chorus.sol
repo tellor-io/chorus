@@ -133,7 +133,7 @@ contract Chorus is Inflation, OracleGetter, ERC20 {
             accrueInterest(totalSupply(), inflRatePerSec, block.timestamp - inflLastUpdate);
         uint256 _tokenValue = wmul(tokenPrice(), tokenSupplyWithInflInterest);
         if(_tokenValue == 0){
-            return 1000000e18;
+            return 100e18;
         }
         return wdiv(_collateralValue,_tokenValue);
     }
