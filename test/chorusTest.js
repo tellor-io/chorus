@@ -150,28 +150,24 @@ describe("Chorus tests", function () {
 
   it("Collateral deposit and ratio", async function () {
     let collateralDeposit = 10n;
-    await chorus.depositCollateral(collateralDeposit * precision)
+    await chorus.depositCollateral(collateralDeposit * precision) //deposit 10 *100$ = 1,000
     expect(await collateral.balanceOf(chorus.address)).to.equal(collateralDeposit * precision)
     expect(await chorus.collateralRatio()).to.equal(0)
-    let tokensMinted = 499n;
+    let tokensMinted = 499n; //Mint 500 tokens
     await chorus.mintToken(tokensMinted * precision, acc1.address)
     expect(tokensMinted).to.equal(BigInt(await chorus.totalSupply()) / precision)
     let totalTokenValue = Number(tokensMinted) * tokenPrice
     let collateralValue = collateralDeposit * BigInt(collateralPrice) * precision
-    let expcollateralRatio = 100 + (totalTokenValue / Number(collateralValue) * 100)
+    let expcollateralRatio = 100* Number(collateralValue)/totalTokenValue 
     let actcollateralRatio = (Number(await chorus.collateralRatio()) / Number(precision) * 100)
-    expect(expcollateralRatio).to.equal(actcollateralRatio)
+    expect(expcollateralRatio).to.be.closeTo(actcollateralRatio,.001)
   });
 
   it("Should not allow minting tokens above the collateral threshold", async function () {
     let collateralDeposit = 10n;
     await chorus.depositCollateral(collateralDeposit * precision)
     expect(await chorus.collateralRatio()).to.equal(0)
-    // Collateral price is 100 so 499 minted tokens will put the system
-    // into 49% utilization which is close to the default 150% collateral thershold.
-    // Collateral total value = 1000(100x10),
-    // Tokens total value = 499(499x1).
-    let tokensMinted = 499n;
+    let tokensMinted = 666n;
     await chorus.mintToken(tokensMinted * precision, acc1.address)
     expect(tokensMinted).to.equal(BigInt(await chorus.totalSupply()) / precision)
     await expect(chorus.mintToken(1n * precision, acc1.address)).to.be.reverted
@@ -184,11 +180,7 @@ describe("Chorus tests", function () {
     await chorus.depositCollateral(collateralDeposit * precision)
     expect(await collateral.balanceOf(owner.address)).to.equal(0);
     expect(await collateral.balanceOf(chorus.address)).to.equal(collateralDeposit * precision);
-    // Collateral price is 100 so total collateral value is 1000
-    // 400 minted tokens are worth 400 which is 40% collateral utilization.
-    // This is 10% below the  50% collateral threshold so
-    // should be able to withdraw 10% of the collateral.
-    let tokensMinted = 400n;
+    let tokensMinted = 600n;
     await chorus.mintToken(tokensMinted * precision, acc1.address)
     let expWithdrawAmnt = 1n * precision;
     await chorus.withdrawCollateral(expWithdrawAmnt)

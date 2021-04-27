@@ -23,11 +23,11 @@ module.exports = {
   networks: {
     hardhat: {
     },
-    localhost: {
-      url: `${process.env.NODE_TEST}`,
-      accounts: [process.env.PRIVATE_KEY],
-      explorer: "http://rinkeby.etherscan.io/address/"
-    },
+    // localhost: {
+    //   url: `${process.env.NODE_TEST}`,
+    //   accounts: [process.env.PRIVATE_KEY],
+    //   explorer: "http://rinkeby.etherscan.io/address/"
+    // },
     // test: {
     //   url: `${process.env.NODE_TEST}`,
     //   accounts: [process.env.PRIVATE_KEY],

@@ -132,7 +132,10 @@ contract Chorus is Inflation, OracleGetter, ERC20 {
         uint256 tokenSupplyWithInflInterest =
             accrueInterest(totalSupply(), inflRatePerSec, block.timestamp - inflLastUpdate);
         uint256 _tokenValue = wmul(tokenPrice(), tokenSupplyWithInflInterest);
-        return add(1e18, wdiv(_tokenValue, _collateralValue));
+        if(_tokenValue == 0){
+            return 100e18;
+        }
+        return wdiv(_collateralValue,_tokenValue);
     }
 
     /**
@@ -152,8 +155,8 @@ contract Chorus is Inflation, OracleGetter, ERC20 {
      */
     function liquidate() external {
         require(
-            collateralRatio() > collateralThreshold,
-            "collateral utilizatoin is below threshold"
+            collateralRatio() < collateralThreshold,
+            "collateral utilizatoin is above threshold"
         );
         require(balanceOf(msg.sender) > 0, "msg sender doesn't own any tokens");
         uint256 _tknSuplyRatio =
@@ -182,8 +185,8 @@ contract Chorus is Inflation, OracleGetter, ERC20 {
         _mint(_to, _amount);
         uint256 _cRatio = collateralRatio();
         require(
-            _cRatio < collateralThreshold,
-            "collateral utilization above the threshold"
+            _cRatio >= collateralThreshold,
+            "collateral utilization below the threshold"
         );
         emit MintTokens(msg.sender, _amount, _to, _cRatio);
     }
@@ -289,8 +292,8 @@ contract Chorus is Inflation, OracleGetter, ERC20 {
         );
         uint256 _cRatio = collateralRatio();
         require(
-            _cRatio < collateralThreshold,
-            "collateral utilization above the threshold"
+            _cRatio >= collateralThreshold,
+            "collateral utilization below the threshold"
         );
         // slither-disable-next-line reentrancy-events
         emit WithdrawCollateral(msg.sender, _amount, _cRatio);
