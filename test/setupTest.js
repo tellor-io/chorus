@@ -1,4 +1,4 @@
-const { expect } = require("chai")
+const { expect, assert } = require("chai")
 const { default: Decimal } = require("decimal.js");
 const { providers } = require("ethers");
 
@@ -12,13 +12,12 @@ const collateralPrice = 100 //price of collateral token
 const oraclePricePrecision = 1e6 //precision of oracle's token price data
 const secsPerYear = 365*24*60*60
 const nominalInflationRateYear = 0.1 // 0.1 = 10%
-const effectiveInflationRate = nominaltoEffectiveInflation(new Decimal(nominalRateYear))
+const effectiveInflationRate = nominalToEffectiveInflation(new Decimal(nominalInflationRateYear))
 const inflationRate = new Decimal(effectiveInflationRate).mul(1e18) //effective inflation rate (formatted for solidity)
-const inflationRatePerSec = ((inflRate / 1e10) / (secsPerYear * 10e7))
+const inflationRatePerSec = ((inflationRate / 1e10) / (secsPerYear * 10e7))
 const notePrice = 1e18
 
 var evmCurrentBlockTime = Math.round((Number(new Date().getTime())) / 1000)
-
 
 /** 'beforeEach' will run before each test.
  *  
@@ -36,8 +35,8 @@ beforeEach(async function() {
     //setup test contracts
     let testContracts = await setupTest()
     oracle = testContracts.oracle
-    collateralTkn = res.collateralTkn
-    chorus = res.chorus
+    collateralTkn = testContracts.collateralTkn
+    chorus = testContracts.chorus
 })
 
 const setupTest = deployments.createFixture(
@@ -63,16 +62,16 @@ const setupTest = deployments.createFixture(
         let collateralTkn = await ethers.getContract("Token")
         //deploy test Chorus contract
         await deployments.deploy('Chorus', {
-            from: ownder.address,
+            from: owner.address,
             //Chorus constructor arguments, see contracts/Chorus.sol
             args: [
                 oracleDepl.address,
                 collateralDepl.address,
                 1, 
-                collateralPricePrecision,
+                oraclePricePrecision,
                 "Anthem", //anthem name (arbitrary)
                 "ANT", //anthem symbol (arbitrary)
-                BigInt(Math.floor(inflRate)).toString(),
+                BigInt(Math.floor(inflationRate)).toString(),
                 beneficiary.address,
                 false
             ]
@@ -82,15 +81,20 @@ const setupTest = deployments.createFixture(
         //Prepare the inital state of the contracts
         //Add price and rewind the evm
         //as the evm uses a price at least collateralPriceAge old (the Tellor feed delay)
-        await oracle.submitValue(1, collateralPrice * collateralPriceGranularity)
-        evmCurrentBlockTime = evmCurrentBlockTime + Number(await chorus.collateralPriceAge()) + 100
+        await oracle.submitValue(1, collateralPrice * oraclePricePrecision)
+        evmCurrentBlockTime = evmCurrentBlockTime + Number(await chorus.collateralPriceAge()) + 500
         await waffle.provider.send("evm_setNextBlockTimestamp", [evmCurrentBlockTime])
         await waffle.provider.send("evm_mine")
-        await collateral.mint(owner.address, 10n*precision)
-        await collateral.increaseAllowance(chorus.address, BigInt(1e50))
+        await collateralTkn.mint(owner.address, 10n*tokenPrecision)
+        await collateralTkn.increaseAllowance(chorus.address, BigInt(1e50))
         //return test contracts
         return { oracle, collateralTkn, chorus }
 })
 
-
-
+function nominalToEffectiveInflation(nominal) {
+    let secsPerYearD = new Decimal(secsPerYear)
+    let base = new Decimal(1.0).add(nominal.div(secsPerYearD))
+    let j = base.pow(secsPerYearD)
+    let k = j.sub(new Decimal(1.0))
+    return k
+  }
