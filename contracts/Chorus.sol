@@ -71,7 +71,7 @@ contract Chorus is Inflation, OracleGetter, ERC20 {
     /**
      * @dev This is the constructor, sets the inital paramaters in the system
      * The parameters include, the Tellor Address, collateral token's address,
-     * collateral token's requestID, the price granualrity, the token name, 
+     * collateral token's requestID, the price granularity, the token name, 
      * token's symbol, inflation rate per year, and the inflation beneficiary 
      */
     constructor(
