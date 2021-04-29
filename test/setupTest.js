@@ -85,6 +85,7 @@ const setupTest = deployments.createFixture(
         evmCurrentBlockTime = evmCurrentBlockTime + Number(await chorus.collateralPriceAge()) + 500
         await waffle.provider.send("evm_setNextBlockTimestamp", [evmCurrentBlockTime])
         await waffle.provider.send("evm_mine")
+
         await collateralTkn.mint(owner.address, 10n*tokenPrecision)
         await collateralTkn.increaseAllowance(chorus.address, BigInt(1e50))
         //return test contracts

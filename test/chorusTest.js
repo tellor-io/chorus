@@ -1,26 +1,22 @@
 const { expect } = require("chai");
 const { default: Decimal } = require("decimal.js");
 
-let owner, acc1, acc2, acc3, acc4, benificiary;
-let collateral;
-let chorus;
-let oracle;
+//eth addresses
+let owner, acc1, acc2, acc3, acc4, beneficiary; //eth accounts used by tests
+let oracle, chorus, collateralTkn; //eth contracts used by tests
 
-const precision = BigInt(1e18);
-const collateralPriceGranularity = 1e6;
-const collateralPrice = 100;
-const secsPerYear = 365 * 24 * 60 * 60
-// At 10% the rounding error is 0.02%.
-// At 50% the rounding error is 4%.
-// It is realistic to assume that most project will not need a very high inflation.
-const nominalRateYear = 0.1 //10%
-const effRate = nominalToEffectiveInflation(new Decimal(nominalRateYear))
-const inflRate = new Decimal(effRate).mul(1e18)
-const inflRatePerSec = ((inflRate / 1e10) / (secsPerYear * 10e7))
-const tokenPrice = 1e18;
+//contract constructor arguments
+const tokenPrecision = BigInt(1e18) //token contract float precision (standard)
+const collateralPrice = 100 //price of collateral token
+const oraclePricePrecision = 1e6 //precision of oracle's token price data
+const secsPerYear = 365*24*60*60
+const nominalInflationRateYear = 0.1 // 0.1 = 10%
+const effectiveInflationRate = nominalToEffectiveInflation(new Decimal(nominalInflationRateYear))
+const inflationRate = new Decimal(effectiveInflationRate).mul(1e18) //effective inflation rate (formatted for solidity)
+const inflationRatePerSec = ((inflationRate / 1e10) / (secsPerYear * 10e7))
+const notePrice = 1e18
 
-var evmCurrentBlockTime = Math.round((Number(new Date().getTime())) / 1000);
-
+var evmCurrentBlockTime = Math.round((Number(new Date().getTime())) / 1000)
 // The most accurate way to calculate inflation is a loop with
 // for (let i = 0; i < secsPassed; i++) {
 //  `tokenPrice -= tokenPrice * inflRatePerSec`
@@ -49,58 +45,79 @@ function nominalToEffectiveInflation(nominal) {
   return k
 }
 
-// `beforeEach` will run before each test, re-deploying the contract every
-// time. It receives a callback, which can be async.
-beforeEach(async function () {
-  // Using deployments.createFixture speeds up the tests as
-  // the reset is done with evm_revert.
-  let res = await setupTest()
-  oracle = res.oracle
-  collateral = res.collateral
-  chorus = res.chorus
-});
+/** 'beforeEach' will run before each test.
+ *  
+ *  It re-deploys the contract every time.
+ *  Redeploying the contract resets the state,
+ *  so that test processes don't affect each other.
+ *  
+ *  It receives a callback, which can be async.
+ * 
+*/
+beforeEach(async function() {
+  //Using deployments.createFixture speeds up the tests as
+  //the reset is done with evm_revert
 
-const setupTest = deployments.createFixture(async ({ deployments, getNamedAccounts, ethers }, options) => {
-  [owner, acc1, acc2, acc3, acc4, benificiary] = await ethers.getSigners();
-  let oracleDepl = await deployments.deploy('MockOracle', {
-    from: owner.address,
-  })
-  let oracle = await ethers.getContract("MockOracle");
-  let collateralDepl = await deployments.deploy('Token', {
-    from: owner.address,
-    args: [
-      "Ethereum",
-      "ETH",
-      false
-    ],
-  })
-  let collateral = await ethers.getContract("Token");
-  // Deploy the actual contract to test.
-  await deployments.deploy('Chorus', {
-    from: owner.address,
-    args: [
-      oracleDepl.address,
-      collateralDepl.address,
-      1,//collateralID e.g. 1
-      collateralPriceGranularity,
-      "Note",//tokenName
-      "NTO",//tokenSymbol
-      BigInt(Math.floor(inflRate)).toString(),
-      benificiary.address,
-      false
-    ],
-  });
-  let chorus = await ethers.getContract("Chorus");
-  // Prepare the initial state of the contracts.
-  // Add price and rewind the evm as the system uses a price at least collateralPriceAge old.
-  await oracle.submitValue(1, collateralPrice * collateralPriceGranularity)
-  evmCurrentBlockTime = evmCurrentBlockTime + Number(await chorus.collateralPriceAge()) + 100
-  await waffle.provider.send("evm_setNextBlockTimestamp", [evmCurrentBlockTime]);
-  await waffle.provider.send("evm_mine");
-  await collateral.mint(owner.address, 10n * precision)
-  await collateral.increaseAllowance(chorus.address, BigInt(1e50));
-  return { oracle, collateral, chorus }
-});
+  //setup test contracts
+  let testContracts = await setupTest()
+  oracle = testContracts.oracle
+  collateralTkn = testContracts.collateralTkn
+  chorus = testContracts.chorus
+})
+
+const setupTest = deployments.createFixture(
+  async ({ deployments, getNamedAccounts, ethers }, options) => {
+      //create ethereum accounts for common Chorus contract roles
+      let users = [owner, acc1, acc2, acc3, acc4, beneficiary] = await ethers.getSigners();
+      //deploy test Tellor oracle
+      let oracleDepl = await deployments.deploy('MockOracle', {
+          from: owner.address,
+      })
+      //connect to test Tellor oracle contract
+      let oracle = await ethers.getContract("MockOracle")
+      //deploy test ERC20 collateral token contract (arbitrary token)
+      let collateralDepl = await deployments.deploy('Token', {
+          from: owner.address,
+          args: [
+              "myToken", //arbitrary name
+              "TKN", //arbitrary symbol
+              false
+          ]
+      })
+      //connect to test ERC20 collateral token contract
+      let collateralTkn = await ethers.getContract("Token")
+      //deploy test Chorus contract
+      await deployments.deploy('Chorus', {
+          from: owner.address,
+          //Chorus constructor arguments, see contracts/Chorus.sol
+          args: [
+              oracleDepl.address,
+              collateralDepl.address,
+              1, 
+              oraclePricePrecision,
+              "Anthem", //anthem name (arbitrary)
+              "ANT", //anthem symbol (arbitrary)
+              BigInt(Math.floor(inflationRate)).toString(),
+              beneficiary.address,
+              false
+          ]
+      })
+      //connect to test Chorus Anthem contract
+      let chorus = await ethers.getContract("Chorus")
+      //Prepare the inital state of the contracts
+      //Add price and rewind the evm
+      //as the evm uses a price at least collateralPriceAge old (the Tellor feed delay)
+      await oracle.submitValue(1, collateralPrice * oraclePricePrecision)
+      evmCurrentBlockTime = evmCurrentBlockTime + Number(await chorus.collateralPriceAge()) + 500
+      await waffle.provider.send("evm_setNextBlockTimestamp", [evmCurrentBlockTime])
+      await waffle.provider.send("evm_mine")
+      //give dummy users some collateral token
+      users.forEach
+      await collateralTkn.mint(owner.address, 10n*tokenPrecision)
+      await collateralTkn.increaseAllowance(chorus.address, BigInt(1e50))
+      //return test contracts
+      return { oracle, collateralTkn, chorus }
+})
 
 describe("Chorus tests", function () {
   it("Token Inflation", async function () {
@@ -271,6 +288,14 @@ describe("Chorus tests", function () {
     let collateralDeposit = 10n
     let mintedTokens = 400n
     let users = [user1, user2]
+    users.forEach(function(user) {
+      require(await collateral.balanceOf(user.address) == "user ")
+      require(await chorus.balanceOf(user.address) == 0, "user should not have notes until they deposit collateral")
+    })
+    //admin deposits collateral in order to mint notes
+    await chorus.depositCollateral(collateralDeposit*precision)
+    //admin mints notes
+    await chorus.mintToken(mintedTokens*precision)
     //read collateralization ratio
     collateralRatio = await chorus.collateralRatio()
     //increase collateral price by 100%
@@ -279,11 +304,18 @@ describe("Chorus tests", function () {
     oracle.submitValue(1, collateralPrice*collateralPriceGranularity)
     //collateral ratio should double
     assert(await chorus.collateralRatio() == (collateralRatio * 2), "collateralization ratio didn't update on chain")
-    //admin deposits collateral in order to mint notes
-    await chorus.depositCollateral(collateralDeposit*precision)
-    //admin mints notes
-    await chorus.mintToken(mintedTokens*precision)
-    //users withdraw collateral
+    //each user withdraws token for their collateral
+    users.forEach(function(user) {
+      //check balances of token, notes
+      require(await chorus.balanceOf(user.address) == collateralDeposit, "user's notes balance didn't update")
+      await collateral.balanceOf(user.address)
+      //user requests to withdraw
+      //check balances of token, notes
+      //user tries to withdraw immediately and can't
+      //check balances of token, notes
+      //user waits and withdraws
+      //check balances of token, notes
+    })
 
 
   })
@@ -300,5 +332,8 @@ describe("Chorus tests", function () {
 
   })
 
-});
+  it("handles very high and very low collateralization and token supply", async function () {
+    
+  })
 
+});
