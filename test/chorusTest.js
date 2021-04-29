@@ -67,7 +67,7 @@ beforeEach(async function() {
 
 const setupTest = deployments.createFixture(
   async ({ deployments, getNamedAccounts, ethers }, options) => {
-      //create ethereum accounts for common Chorus contract roles
+      //create dummy ethereum accounts for common Chorus contract roles
       let users = [owner, acc1, acc2, acc3, acc4, beneficiary] = await ethers.getSigners();
       //deploy test Tellor oracle
       let oracleDepl = await deployments.deploy('MockOracle', {
@@ -112,8 +112,9 @@ const setupTest = deployments.createFixture(
       await waffle.provider.send("evm_setNextBlockTimestamp", [evmCurrentBlockTime])
       await waffle.provider.send("evm_mine")
       //give dummy users some collateral token
-      users.forEach
-      await collateralTkn.mint(owner.address, 10n*tokenPrecision)
+      users.forEach(function(user) {
+        await collateralTkn.mint(user.address, 10n*tokenPrecision)
+      })
       await collateralTkn.increaseAllowance(chorus.address, BigInt(1e50))
       //return test contracts
       return { oracle, collateralTkn, chorus }
