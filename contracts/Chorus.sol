@@ -50,7 +50,7 @@ contract Chorus is Inflation, OracleGetter, ERC20 {
     uint256 public collateralPriceGranularity; //usually 1000000 in the Tellor system
     uint256 public collateralThreshold = 15e17; // 150%.
     uint256 public collateralPriceAge = 3600; // e.g. 1hr.  This is the delay in the feed from Tellor
-    uint256 public liquidationPenatly = 0;
+    uint256 public liquidationPenalty = 0;
     uint256 public inflRatePerSec;// The rate at which the token decreases value. 1e18 precision. 100e18 is 100%.
     uint256 public inflLastUpdate = block.timestamp;
     address public inflBeneficiary; // Where to send the inflation tokens.
@@ -163,7 +163,7 @@ contract Chorus is Inflation, OracleGetter, ERC20 {
             wdiv(collateralToken.balanceOf(address(this)), totalSupply());
         uint256 _tokensToBurn = balanceOf(msg.sender);
         uint256 _collatAmt = wmul(_tokensToBurn, _tknSuplyRatio);
-        uint256 _collatPenalty = wmul(_collatAmt, liquidationPenatly);
+        uint256 _collatPenalty = wmul(_collatAmt, liquidationPenalty);
         emit Liquidate(msg.sender, _tokensToBurn, _collatAmt, _collatPenalty);
         _burn(msg.sender, _tokensToBurn);
         require(
@@ -240,13 +240,13 @@ contract Chorus is Inflation, OracleGetter, ERC20 {
      * @dev Allows the admin to set the liquidation penalty
      * @param _amount the amount of the liquidation penalty
      */
-    function setLiquidationPenatly(uint256 _amount)
+    function setLiquidationPenalty(uint256 _amount)
         external
         onlyAdmin
         within100e18Range(_amount)
     {
-        liquidationPenatly = wdiv(_amount, 100e18); // Convert to a fraction.
-        emit LiquidationPenatly(liquidationPenatly);
+        liquidationPenalty = wdiv(_amount, 100e18); // Convert to a fraction.
+        emit LiquidationPenalty(liquidationPenalty);
     }
 
     /**
