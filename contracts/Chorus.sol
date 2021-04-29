@@ -22,7 +22,7 @@ contract Chorus is Inflation, OracleGetter, ERC20 {
         uint256 _collateralAmnt,
         uint256 _collateralPenalty
     );//emits upon a liquidation
-    event LiquidationPenatly(uint256 _newPenalty);//emits when the liquidation penalty changes
+    event LiquidationPenalty(uint256 _newPenalty);//emits when the liquidation penalty changes
     event MintTokens(
         address _holder,
         uint256 _amount,
