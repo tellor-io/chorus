@@ -1,4 +1,4 @@
-const { expect } = require("chai");
+const { expect, assert } = require("chai");
 const { default: Decimal } = require("decimal.js");
 
 //eth addresses
@@ -114,6 +114,9 @@ const setupTest = deployments.createFixture(
       //give dummy users some collateral token
       users.forEach(function(user) {
         await collateralTkn.mint(user.address, 10n*tokenPrecision)
+        //doublecheck that dummy users now have collateral
+        assert(await collateralTkn.balanceOf(user.address) == 10n*tokenPrecision,
+               "users were not minted collateral as expected")
       })
       await collateralTkn.increaseAllowance(chorus.address, BigInt(1e50))
       //return test contracts
@@ -289,20 +292,28 @@ describe("Chorus tests", function () {
     let collateralDeposit = 10n
     let mintedTokens = 400n
     let users = [user1, user2]
+    //
     users.forEach(function(user) {
-      require(await collateral.balanceOf(user.address) == "user ")
       require(await chorus.balanceOf(user.address) == 0, "user should not have notes until they deposit collateral")
     })
     //admin deposits collateral in order to mint notes
     await chorus.depositCollateral(collateralDeposit*precision)
     //admin mints notes
-    await chorus.mintToken(mintedTokens*precision)
+    users.forEach(function(user) {
+      await chorus.mintToken(mintedTokens*tokenPrecision, user.address)
+      //check that users received balances
+      require(await chorus.balanceOf(user.address) == mintedTokens*tokenPrecision, "users did not receive notes for their posted collateral")
+    })
     //read collateralization ratio
     collateralRatio = await chorus.collateralRatio()
     //increase collateral price by 100%
     collateralprice = collateralPrice * 2
     //collateral price fluctuates, miner submits new value
     oracle.submitValue(1, collateralPrice*collateralPriceGranularity)
+    evmCurrentBlockTime = evmCurrentBlockTime + Number(await chorus.collateralPriceAge()) + 100
+    await waffle.provider.send("evm_setNextBlockTimestamp", [evmCurrentBlockTime])
+    await waffle.provider.send("evm_mine")
+    //
     //collateral ratio should double
     assert(await chorus.collateralRatio() == (collateralRatio * 2), "collateralization ratio didn't update on chain")
     //each user withdraws token for their collateral
@@ -335,6 +346,10 @@ describe("Chorus tests", function () {
 
   it("handles very high and very low collateralization and token supply", async function () {
     
+  })
+
+  it("prevent withdrawal, undo withdrawal request after liquidation", async function () {
+
   })
 
 });
