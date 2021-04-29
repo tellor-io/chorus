@@ -265,4 +265,40 @@ describe("Chorus tests", function () {
     }
     await expect(chorus.withdrawToken(1n), "withdraw tokens when balance should be zero").to.be.reverted
   })
+
+  it("withdrawal after collateral price fluctuation", async function () {
+    //declare variables
+    let collateralDeposit = 10n
+    let mintedTokens = 400n
+    let users = [user1, user2]
+    //read collateralization ratio
+    collateralRatio = await chorus.collateralRatio()
+    //increase collateral price by 100%
+    collateralprice = collateralPrice * 2
+    //collateral price fluctuates, miner submits new value
+    oracle.submitValue(1, collateralPrice*collateralPriceGranularity)
+    //collateral ratio should double
+    assert(await chorus.collateralRatio() == (collateralRatio * 2), "collateralization ratio didn't update on chain")
+    //admin deposits collateral in order to mint notes
+    await chorus.depositCollateral(collateralDeposit*precision)
+    //admin mints notes
+    await chorus.mintToken(mintedTokens*precision)
+    //users withdraw collateral
+
+
+  })
+
+  it("liquidation then withdrawals after collateral price fluctuation", async function () {
+
+  })
+
+  it("mint notes after huge upward price change", async function () {
+
+  })
+
+  it("withdrawal after year's end initiates inflation", async function () {
+
+  })
+
 });
+
