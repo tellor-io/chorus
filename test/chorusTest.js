@@ -292,17 +292,17 @@ describe("Chorus tests", function () {
     let collateralDeposit = 10n
     let mintedTokens = 400n
     let users = [user1, user2]
-    //
+    //ensure fresh start (each user has zero balance)
     users.forEach(function(user) {
-      require(await chorus.balanceOf(user.address) == 0, "user should not have notes until they deposit collateral")
+      assert(await chorus.balanceOf(user.address) == 0, "user should not have notes until they deposit collateral")
     })
     //admin deposits collateral in order to mint notes
-    await chorus.depositCollateral(collateralDeposit*precision)
-    //admin mints notes
+    await chorus.depositCollateral(collateralDeposit*tokenPrecision)
+    //admin mints notes to users
     users.forEach(function(user) {
       await chorus.mintToken(mintedTokens*tokenPrecision, user.address)
       //check that users received balances
-      require(await chorus.balanceOf(user.address) == mintedTokens*tokenPrecision, "users did not receive notes for their posted collateral")
+      assert(await chorus.balanceOf(user.address) == mintedTokens*tokenPrecision, "user did not receive (or received wrong amount of) notes")
     })
     //read collateralization ratio
     collateralRatio = await chorus.collateralRatio()
@@ -313,15 +313,15 @@ describe("Chorus tests", function () {
     evmCurrentBlockTime = evmCurrentBlockTime + Number(await chorus.collateralPriceAge()) + 100
     await waffle.provider.send("evm_setNextBlockTimestamp", [evmCurrentBlockTime])
     await waffle.provider.send("evm_mine")
-    //
     //collateral ratio should double
     assert(await chorus.collateralRatio() == (collateralRatio * 2), "collateralization ratio didn't update on chain")
     //each user withdraws token for their collateral
     users.forEach(function(user) {
       //check balances of token, notes
-      require(await chorus.balanceOf(user.address) == collateralDeposit, "user's notes balance didn't update")
+      assert(await chorus.balanceOf(user.address) == collateralDeposit, "user's notes balance didn't update")
       await collateral.balanceOf(user.address)
-      //user requests to withdraw
+      //user requests to withdraw all tokens for their collateral
+      chorus.requestWithdrawToken()
       //check balances of token, notes
       //user tries to withdraw immediately and can't
       //check balances of token, notes
