@@ -156,7 +156,7 @@ contract Chorus is Inflation, OracleGetter, ERC20 {
     function liquidate() external {
         require(
             collateralRatio() < collateralThreshold,
-            "collateral utilizatoin is above threshold"
+            "collateral utilization is above threshold"
         );
         require(balanceOf(msg.sender) > 0, "msg sender doesn't own any tokens");
         uint256 _tknSuplyRatio =
