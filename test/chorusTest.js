@@ -362,8 +362,6 @@ describe("Chorus tests", function () {
     await waffle.provider.send("evm_setNextBlockTimestamp", [evmCurrentBlockTime])
     await waffle.provider.send("evm_mine")
     //collateral ratio should decrease by two-thirds
-    // console.log("new token price:", newCollateralPrice)
-    console.log("total supply:", Number(await chorus.totalSupply()) / Number(precision))
     expect(Number(await chorus.collateralRatio()) / Number(precision))
            .to.be.closeTo(Number(collateralRatio) * 0.33 / Number(precision), .001,
            "collateralization ratio didn't update on chain")
@@ -385,21 +383,20 @@ describe("Chorus tests", function () {
     assert(await chorus.balanceOf(acc1.address) == mintedTokens*precision, "user did not receive (or received wrong amount of) notes")
     //read collateralization ratio
     collateralRatio = await chorus.collateralRatio()
-    //decrese collateral price by two-thirds
-    collateralprice = collateralPrice * 3
     //collateral price fluctuates, miner submits new value
-    oracle.submitValue(1, collateralPrice*oraclePricePrecision)
+    await oracle.submitValue(1, 300*oraclePricePrecision)
     evmCurrentBlockTime = evmCurrentBlockTime + Number(await chorus.collateralPriceAge()) + 100
     await waffle.provider.send("evm_setNextBlockTimestamp", [evmCurrentBlockTime])
     await waffle.provider.send("evm_mine")
-    //collateral ratio should decrease by two-thirds
+    //collateral ratio should triple
     expect(Number(await chorus.collateralRatio()))
            .to.be.closeTo(Number(collateralRatio) * 3, .001,
            "collateralization ratio didn't update on chain")
-    initialBalance = chorus.balanceOf()
-    chorus.mintToken(acc1.address, mintedTokens*precision)
+    initialBalance = BigInt(await chorus.balanceOf(acc1.address))
+    await chorus.mintToken(mintedTokens*precision, acc1.address)
     //double check note balances have updated
-    assert(await chorus.balanceOf(acc1.address) == initialBalance + mintedTokens*precision,
+    expect(await chorus.balanceOf(acc1.address))
+    .to.equal(initialBalance + mintedTokens*precision,
            "user was not minted (or minted wrong amount of) notes")
   })
 
