@@ -325,7 +325,7 @@ describe("Chorus tests", function () {
     //check balance of user's collateral, they shouldn't have any collateral yet
     assert(await collateralTkn.balanceOf(acc1.address) == 0)
     //user waits one day
-    evmCurrentBlockTime = evmCurrentBlockTime + Number(await chorus.collateralPriceAge()) + 86400 * 22//~5760 blocks per day
+    evmCurrentBlockTime = evmCurrentBlockTime + Number(await chorus.collateralPriceAge()) + 86400 * 22// 22 days to withdraw all tokens
     await waffle.provider.send("evm_setNextBlockTimestamp", [evmCurrentBlockTime]) 
     await waffle.provider.send("evm_mine")
     //user withdraws successfully
