@@ -332,9 +332,10 @@ describe("Chorus tests", function () {
     await chorus.connect(acc1).withdrawToken()
     //check balances of colllatreal
     expect(Number(await collateralTkn.balanceOf(acc1.address)))
-    .to.equal(Number(await chorus.tokenPrice())
+    .to.be.closeTo(Number(await chorus.tokenPrice())
               / Number(await chorus.collateralPrice())
               * Number(mintedTokens * precision),
+              0.01*1e+18,
               "User could not claim collateral after withdrawal as expected")
 
 
@@ -406,15 +407,11 @@ describe("Chorus tests", function () {
     let mintedTokens = 400n
     //ensure fresh start (each user has zero balance)
     assert(await chorus.balanceOf(acc1.address) == 0, "user should not have notes yet")
-    console.log(1)
     //admin deposits collateral in order to mint notes
     await chorus.depositCollateral(collateralDeposit*precision)
-    console.log(2)
     //admin mints notes to users
     await chorus.mintToken(mintedTokens*precision, acc1.address)
-    console.log(3)
     await chorus.mintToken(mintedTokens*precision, acc2.address)
-    console.log(4)
     await chorus.mintToken(mintedTokens*precision, acc3.address)
     //check that users received balances
     assert(await chorus.balanceOf(acc1.address) == mintedTokens*precision,
@@ -493,7 +490,7 @@ describe("Chorus tests", function () {
   it("handles very high and very low collateralization and token supply", async function () {
       //declare variables
       let collateralDeposit = 30n
-      let mintedTokens = 1n
+      let mintedTokens = 400n
       //ensure fresh start (each user has zero balance)
       assert(await chorus.balanceOf(acc1.address) == 0, "user should not have notes yet")
       //admin deposits collateral in order to mint notes
