@@ -93,7 +93,7 @@ contract Chorus is Inflation, OracleGetter, ERC20 {
         collateralToken = ERC20(_collateralToken);
         collateralPriceGranularity = _collateralPriceGranularity;
         require(_collateralPriceGranularity > 0 && _collateralPriceGranularity <= 1e18, "value not within allowed limits");
-        require(_inflBeneficiary != address(0), "benificiary address not set");
+        require(_inflBeneficiary != address(0), "beneficiary address not set");
         inflBeneficiary = _inflBeneficiary;
         inflRatePerSec = yearlyRateToPerSec(_inflRatePerYear);
     }
