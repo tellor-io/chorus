@@ -111,7 +111,7 @@ const setupTest = deployments.createFixture(
         await waffle.provider.send("evm_setNextBlockTimestamp", [evmCurrentBlockTime])
         await waffle.provider.send("evm_mine")
 
-        await collateralTkn.mint(owner.address, 10n*precision)
+        await collateralTkn.mint(owner.address, 50n*precision)
         await collateralTkn.increaseAllowance(chorus.address, BigInt(1e50))
         //return test contracts
         return { oracle, collateralTkn, chorus }
@@ -400,16 +400,122 @@ describe("Chorus tests", function () {
            "user was not minted (or minted wrong amount of) notes")
   })
 
-  it("withdrawal after year's end initiates inflation", async function () {
-    //
+  it("withdrawal after inflation", async function () {
+    //declare variables
+    let collateralDeposit = 30n
+    let mintedTokens = 400n
+    //ensure fresh start (each user has zero balance)
+    assert(await chorus.balanceOf(acc1.address) == 0, "user should not have notes yet")
+    console.log(1)
+    //admin deposits collateral in order to mint notes
+    await chorus.depositCollateral(collateralDeposit*precision)
+    console.log(2)
+    //admin mints notes to users
+    await chorus.mintToken(mintedTokens*precision, acc1.address)
+    console.log(3)
+    await chorus.mintToken(mintedTokens*precision, acc2.address)
+    console.log(4)
+    await chorus.mintToken(mintedTokens*precision, acc3.address)
+    //check that users received balances
+    assert(await chorus.balanceOf(acc1.address) == mintedTokens*precision,
+           "user did not receive (or received wrong amount of) notes")
+    //read total supply
+    // expect(await chorus.totalSupply())
+    // .to.be.closeTo(
+    //   Number(await chorus.balanceOf(acc1.address))
+    //   + Number(await chorus.balanceOf(acc2.address))
+    //   + Number(await chorus.balanceOf(acc3.address)),
+    //   + Number(await chorus.balanceOf(beneficiary.address)),
+    //   0.01,
+    //   "total supply doesn't equal total of balances"
+    // )
+    //read beneficiary balance
+    expect(await chorus.balanceOf(beneficiary.address)).to.equal(0,
+      "beneficiary has notes before inflation is updated")
+ 
+
+    //fast forward 1 week, pay beneficiary (update inflation), read total supply, read collateral ratio
+    evmCurrentBlockTime = evmCurrentBlockTime + Number(await chorus.collateralPriceAge()) + 604800 //1 week
+    await waffle.provider.send("evm_setNextBlockTimestamp", [evmCurrentBlockTime])
+    await waffle.provider.send("evm_mine")
+    
+    let oldTotalSupply = await chorus.totalSupply()
+    await chorus.updateInflation()
+    expect(Number(await chorus.totalSupply()) / Number(precision))
+      .to.be.closeTo((Number(oldTotalSupply) + Number(await chorus.balanceOf(beneficiary.address))) / Number(precision),
+      0.1,
+      "total supply does not match pre-inflation supply + inflation beneficiary balance"
+      )
+    await chorus.connect(acc1).requestWithdrawToken(mintedTokens*precision)
+    evmCurrentBlockTime = evmCurrentBlockTime + Number(await chorus.collateralPriceAge()) + 86400 * 8 // 8 days to withdraw 1/3 supply
+    await waffle.provider.send("evm_setNextBlockTimestamp", [evmCurrentBlockTime]) 
+    await waffle.provider.send("evm_mine")
+    await chorus.updateInflation()
+    await chorus.connect(acc1).withdrawToken()
+    expect(Number(await chorus.totalSupply()) / Number(precision))
+      .to.be.closeTo(Number(oldTotalSupply) /Number(precision) - Number(mintedTokens),
+      Number(await chorus.balanceOf(beneficiary.address)),
+      "total supply did not decrease by user's note balance")
+
+    //fast forward 3 months
+    evmCurrentBlockTime = evmCurrentBlockTime + Number(await chorus.collateralPriceAge()) + 7.884e+6 //3 months
+    await waffle.provider.send("evm_setNextBlockTimestamp", [evmCurrentBlockTime])
+    await waffle.provider.send("evm_mine")
+
+    oldTotalSupply = await chorus.totalSupply()
+    await chorus.updateInflation()
+    expect(Number(await chorus.totalSupply()) / Number(precision))
+      .to.be.closeTo((Number(oldTotalSupply) + Number(await chorus.balanceOf(beneficiary.address))) / Number(precision),
+      0.1,
+      "total supply does not match pre-inflation supply + inflation beneficiary balance"
+      )
+    await chorus.connect(acc2).requestWithdrawToken(mintedTokens*precision)
+    evmCurrentBlockTime = evmCurrentBlockTime + Number(await chorus.collateralPriceAge()) + 86400 * 8 // 12 days to withdraw 1/2 supply
+    await waffle.provider.send("evm_setNextBlockTimestamp", [evmCurrentBlockTime]) 
+    await waffle.provider.send("evm_mine")
+    await chorus.updateInflation()
+    await chorus.connect(acc2).withdrawToken()
+    expect(Number(await chorus.totalSupply()) / Number(precision))
+      .to.be.closeTo(Number(oldTotalSupply) /Number(precision) - Number(mintedTokens),
+      Number(await chorus.balanceOf(beneficiary.address)),
+      "total supply did not decrease by user's note balance")
+
+
+
+    //fast forward 1 year
+    evmCurrentBlockTime = evmCurrentBlockTime + Number(await chorus.collateralPriceAge()) + 3.154e+7 //1 year
+    await waffle.provider.send("evm_setNextBlockTimestamp", [evmCurrentBlockTime])
+    await waffle.provider.send("evm_mine")
+
 
   })
 
   it("handles very high and very low collateralization and token supply", async function () {
-  
+      //declare variables
+      let collateralDeposit = 30n
+      let mintedTokens = 1n
+      //ensure fresh start (each user has zero balance)
+      assert(await chorus.balanceOf(acc1.address) == 0, "user should not have notes yet")
+      //admin deposits collateral in order to mint notes
+      await chorus.depositCollateral(collateralDeposit*precision)
+      //admin mints notes to users
+      await chorus.mintToken(mintedTokens*precision, acc1.address)
+
+      //decrease collateral price
+      await oracle.submitValue(1, collateralPrice/1000 * oraclePricePrecision)
+      evmCurrentBlockTime = evmCurrentBlockTime + Number(await chorus.collateralPriceAge()) + 500
+      await waffle.provider.send("evm_setNextBlockTimestamp", [evmCurrentBlockTime])
+      await waffle.provider.send("evm_mine")
+
+      //system liquidates
+      await chorus.connect(acc1).liquidate()
+
+      //
   })
 
   it("prevent withdrawal, undo withdrawal request after liquidation", async function () {
+
+    
 
   })
 
