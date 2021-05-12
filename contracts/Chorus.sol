@@ -158,7 +158,10 @@ contract Chorus is Inflation, OracleGetter, ERC20 {
             collateralRatio() < collateralThreshold,
             "collateral utilization is above threshold"
         );
-        require(balanceOf(msg.sender) > 0, "msg sender doesn't own any tokens");
+        require(
+            (balanceOf(msg.sender) > 0) || (withdrawRequested[msg.sender].amount > 0),
+            "msg sender doesn't own any tokens"
+        );
         uint256 _tknSuplyRatio =
             wdiv(collateralToken.balanceOf(address(this)), totalSupply());
         uint256 _tokensToBurn = balanceOf(msg.sender);
