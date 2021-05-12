@@ -107,7 +107,7 @@ const setupTest = deployments.createFixture(
         //Add price and rewind the evm
         //as the evm uses a price at least collateralPriceAge old (the Tellor feed delay)
         await oracle.submitValue(1, collateralPrice * oraclePricePrecision)
-        evmCurrentBlockTime = evmCurrentBlockTime + Number(await chorus.collateralPriceAge()) + 600
+        evmCurrentBlockTime = evmCurrentBlockTime + Number(await chorus.collateralPriceAge()) + 100
         await waffle.provider.send("evm_setNextBlockTimestamp", [evmCurrentBlockTime])
         await waffle.provider.send("evm_mine")
 
