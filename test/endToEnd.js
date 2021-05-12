@@ -540,7 +540,7 @@ describe("Chorus e2e tests", function () {
       await chorus.connect(acc2).liquidate()
 
       //user shouldn't be able to withdraw without penalty (now in liquidation)
-      expect(await chorus.connect(acc1).withdrawToken()).to.be.reverted
+      expect(chorus.connect(acc1).withdrawToken()).to.be.reverted
       //user should be able to liquidate
       await chorus.connect(acc1).liquidate()
 

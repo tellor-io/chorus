@@ -7,8 +7,8 @@ let owner, acc1, acc2, acc3, acc4, beneficiary; //eth accounts used by tests
 let oracle, chorus, collateralTkn; //eth contracts used by tests
 
 //contract constructor arguments
-const tokenPrecision = BigInt(1e18) //token contract float precision (standard)
-const collateralPrice = 100 //price of collateral token
+const precision = BigInt(1e18) //erc20 float precision (standard)
+const collateralPrice = 100 //price of collateralTkn token
 const oraclePricePrecision = 1e6 //precision of oracle's token price data
 const secsPerYear = 365*24*60*60
 const nominalInflationRateYear = 0.1 // 0.1 = 10%
@@ -22,14 +22,14 @@ var evmCurrentBlockTime = Math.round((Number(new Date().getTime())) / 1000)
 
 //helper functions
 
-function accrueInflation(principal, secsPassed, inflPerSec = inflRatePerSec) {
+function accrueInflation(principal, secsPassed, inflPerSec = inflationRatePerSec) {
     let rate = 1 + inflPerSec;
     infl = principal / rate ** secsPassed
     return BigInt(infl);
   }
   
   function accrueInterest(principal, secsPassed) {
-    let rate = 1 + inflRatePerSec;
+    let rate = 1 + inflationRatePerSec;
     interest = principal * (rate ** secsPassed)
     return BigInt(interest - principal);
   }
@@ -74,7 +74,7 @@ const setupTest = deployments.createFixture(
         })
         //connect to test Tellor oracle contract
         let oracle = await ethers.getContract("MockOracle")
-        //deploy test ERC20 collateral token contract (arbitrary token)
+        //deploy test ERC20 collateralTkn token contract (arbitrary token)
         let collateralDepl = await deployments.deploy('Token', {
             from: owner.address,
             args: [
@@ -83,7 +83,7 @@ const setupTest = deployments.createFixture(
                 false
             ]
         })
-        //connect to test ERC20 collateral token contract
+        //connect to test ERC20 collateralTkn token contract
         let collateralTkn = await ethers.getContract("Token")
         //deploy test Chorus contract
         await deployments.deploy('Chorus', {
@@ -111,7 +111,7 @@ const setupTest = deployments.createFixture(
         await waffle.provider.send("evm_setNextBlockTimestamp", [evmCurrentBlockTime])
         await waffle.provider.send("evm_mine")
 
-        await collateralTkn.mint(owner.address, 10n*tokenPrecision)
+        await collateralTkn.mint(owner.address, 50n*precision)
         await collateralTkn.increaseAllowance(chorus.address, BigInt(1e50))
         //return test contracts
         return { oracle, collateralTkn, chorus }
@@ -128,6 +128,8 @@ function nominalToEffectiveInflation(nominal) {
 describe("Chorus Unit Tests", function () {
 
   it("deposit collateral", async function () {
+
+
 
   })
 
