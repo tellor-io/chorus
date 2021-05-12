@@ -19,6 +19,31 @@ const notePrice = 1e18
 
 var evmCurrentBlockTime = Math.round((Number(new Date().getTime())) / 1000)
 
+
+//helper functions
+
+function accrueInflation(principal, secsPassed, inflPerSec = inflRatePerSec) {
+    let rate = 1 + inflPerSec;
+    infl = principal / rate ** secsPassed
+    return BigInt(infl);
+  }
+  
+  function accrueInterest(principal, secsPassed) {
+    let rate = 1 + inflRatePerSec;
+    interest = principal * (rate ** secsPassed)
+    return BigInt(interest - principal);
+  }
+  
+  
+  function nominalToEffectiveInflation(nominal) {
+    let secsPerYearD = new Decimal(secsPerYear)
+    let base = new Decimal(1.0).add(nominal.div(secsPerYearD))
+    let j = base.pow(secsPerYearD)
+    let k = j.sub(new Decimal(1.0))
+    return k
+  }
+
+
 /** 'beforeEach' will run before each test.
  *  
  *  It re-deploys the contract every time.
@@ -99,3 +124,46 @@ function nominalToEffectiveInflation(nominal) {
     let k = j.sub(new Decimal(1.0))
     return k
   }
+
+describe("Chorus Unit Tests", function () {
+
+  it("deposit collateral", async function () {
+
+  })
+
+  it("liquidate", async function () {
+
+  })
+
+  it("mint token", async function () {
+
+  })
+
+  it("request to withdraw token", async function () {
+
+  })
+  
+  it("set admin", async function () {
+
+  })
+
+  it("set collateral threshold", async function () {
+
+  })
+
+  it("set liquidation penalty", async function () {
+
+  })
+
+  it("update inflation", async function () {
+
+  })
+
+  it("withdraw collateral", async function () {
+
+  })
+
+  it("withdraw token", async function () {
+
+  })
+})

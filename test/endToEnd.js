@@ -125,7 +125,7 @@ function nominalToEffectiveInflation(nominal) {
     return k
   }
 
-describe("Chorus tests", function () {
+describe("Chorus e2e tests", function () {
   it("Token Inflation", async function () {
     let collateralDeposit = 10n;
     await chorus.depositCollateral(collateralDeposit * precision)
@@ -539,9 +539,11 @@ describe("Chorus tests", function () {
       //someone else liquidates
       await chorus.connect(acc2).liquidate()
 
-      //user can now withdraw without waiting 20 days
+      //user shouldn't be able to withdraw without penalty (now in liquidation)
+      expect(await chorus.connect(acc1).withdrawToken()).to.be.reverted
+      //user should be able to liquidate
       await chorus.connect(acc1).liquidate()
-      await chorus.connect(acc1).withdrawToken()
+
 
   })
 
