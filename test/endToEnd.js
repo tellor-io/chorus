@@ -541,6 +541,7 @@ describe("Chorus tests", function () {
 
       //user can now withdraw without waiting 20 days
       await chorus.connect(acc1).liquidate()
+      await chorus.connect(acc1).withdrawToken()
 
   })
 
