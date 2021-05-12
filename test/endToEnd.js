@@ -507,12 +507,40 @@ describe("Chorus tests", function () {
       //system liquidates
       await chorus.connect(acc1).liquidate()
 
-      //
+
   })
 
   it("prevent withdrawal, undo withdrawal request after liquidation", async function () {
+    /** A user who has all the notes in supply will request withdrawal.
+     * It should normally take them 21 days (1 day + 1 day for each 5% of ts)
+     * But since the collateral drops in value by factor of 1000,
+     * They should be able to withdraw collateral sooner
+     */
+      //declare variables
+      let collateralDeposit = 30n
+      let mintedTokens = 400n
+      //ensure fresh start (each user has zero balance)
+      assert(await chorus.balanceOf(acc1.address) == 0, "user should not have notes yet")
+      //admin deposits collateral in order to mint notes
+      await chorus.depositCollateral(collateralDeposit*precision)
+      //admin mints notes to users
+      await chorus.mintToken(mintedTokens*precision, acc1.address)
+      await chorus.mintToken(mintedTokens*precision, acc2.address)
 
-    
+      //user requests withdrawal
+      await chorus.connect(acc1).requestWithdrawToken(mintedTokens*precision)
+
+      //decrease collateral price to initiate liquidation
+      await oracle.submitValue(1, collateralPrice/1000 * oraclePricePrecision)
+      evmCurrentBlockTime = evmCurrentBlockTime + Number(await chorus.collateralPriceAge()) + 500
+      await waffle.provider.send("evm_setNextBlockTimestamp", [evmCurrentBlockTime])
+      await waffle.provider.send("evm_mine")
+
+      //someone else liquidates
+      await chorus.connect(acc2).liquidate()
+
+      //user can now withdraw without waiting 20 days
+      await chorus.connect(acc1).liquidate()
 
   })
 
