@@ -209,7 +209,9 @@ describe("Chorus e2e tests", function () {
     let expWithdrawAmnt = 1n * precision;
     await chorus.withdrawCollateral(expWithdrawAmnt)
     expect(Number(await collateralTkn.balanceOf(owner.address))).to.equal(Number(expWithdrawAmnt + 90n*precision));
-    expect(await chorus.withdrawCollateral(1n * precision), "collateral withdraw puts the system below the threshold").to.be.reverted
+    console.log(1)
+    expect(chorus.withdrawCollateral(1n * precision), "collateral withdraw puts the system below the threshold").to.be.reverted
+    console.log(2)
     expect(Number(await collateralTkn.balanceOf(owner.address))).to.equal(Number(expWithdrawAmnt + 90n*precision));
   })
 
