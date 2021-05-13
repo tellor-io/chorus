@@ -169,6 +169,7 @@ contract Chorus is Inflation, OracleGetter, ERC20 {
         uint256 _collatPenalty = wmul(_collatAmt, liquidationPenalty);
         emit Liquidate(msg.sender, _tokensToBurn, _collatAmt, _collatPenalty);
         _burn(msg.sender, _tokensToBurn);
+        withdrawRequested[msg.sender].amount = 0;
         require(
             collateralToken.transfer(msg.sender, sub(_collatAmt, _collatPenalty)),
             "collateral liquidation transfer fails"
