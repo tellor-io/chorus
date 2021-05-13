@@ -128,11 +128,63 @@ function nominalToEffectiveInflation(nominal) {
 describe("Chorus Unit Tests", function () {
 
   it("deposit collateral", async function () {
-    console.log(collateralTkn.balanceOf(owner.address))
+
+    //onlyAdmin: users shouldn't be able to deposit collateral
+    await collateralTkn.mint(acc1.address, 10n*precision)
+    let accColatteralBalance = await collateralTkn.balanceOf(acc1.address)
+    expect(chorus.connect(acc1).depositCollateral(accColatteralBalance),
+      "non-admin deposited collateral").to.be.reverted
+    //require 1: owner must deposit non-zero amount of collateral 
+    expect(chorus.connect(owner).depositCollateral(0),
+      "owner deposited 0 collateral").to.be.reverted
+    //require 2: owner must have sufficient collateral for deposit
+    let ownerCollateralBalance = await collateralTkn.balanceOf(owner.address)
+    expect(chorus.connect(owner).depositCollateral(ownerCollateralBalance + 1n),
+      "owner deposited more collateral than their collateral balance").to.be.reverted
+
 
   })
 
   it("liquidate", async function () {
+
+    //setup: deposit collateral and mint token to user, user withdraws for collateral
+    await chorus.connect(owner).depositCollateral(20n*precision)
+    await chorus.connect(owner).mintToken(10n*precision, acc1.address)
+    await chorus.connect(acc1).requestWithdrawToken(10n*precision)
+    await chorus.connect(acc3).requestWithdrawToken(10n*precision)
+
+
+    //require 1: no liquidation unless undercollateralized
+    expect(chorus.connect(acc1).liquidate(),
+      "user could liquidate over-collateralized system").to.be.reverted
+
+    //tank collateral price
+    await oracle.submitValue(1, (collateralPrice / 1000) * oraclePricePrecision)
+    evmCurrentBlockTime = evmCurrentBlockTime + Number(await chorus.collateralPriceAge()) + 100
+    await waffle.provider.send("evm_setNextBlockTimestamp", [evmCurrentBlockTime])
+    await waffle.provider.send("evm_mine")
+
+    //require 2: user must have a balance of notes or have notes locked in chorus contract
+    expect(
+      chorus.connect(acc2).liquidate(),
+      "user liquidated without holding notes"
+    ).to.be.reverted
+    
+    //require 2: user should be able to liquidate between withdrawal request and withdrawal
+    await chorus.connect(acc1).liquidate()
+    expect(await chorus.balanceOf(acc1.address)).to.equal(
+      0,
+      "user still has notes after liquidation"
+    )
+    expect(await collateralTkn.balanceOf(acc1.address)).to.equal(
+      0,
+      
+    )
+
+    //require 3: should transfer collateral (minus liquidation penalty) back to user
+    expect
+
+    //require 4: should transfer liquidation penalty to inflation beneficiary
 
   })
 
