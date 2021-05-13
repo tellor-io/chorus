@@ -128,8 +128,7 @@ function nominalToEffectiveInflation(nominal) {
 describe("Chorus Unit Tests", function () {
 
   it("deposit collateral", async function () {
-
-
+    console.log(collateralTkn.balanceOf(owner.address))
 
   })
 
