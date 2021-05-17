@@ -222,7 +222,28 @@ describe("Chorus Unit Tests", function () {
   })
 
   it("request to withdraw token", async function () {
+    //setup
+    await chorus.connect(owner).depositCollateral(20n*precision)
+    await chorus.connect(owner).mintToken(10n*precision, acc1.address)
 
+    //require 1: withdraw amount should be greater than 0
+    expect(
+      chorus.connect(acc1).requestWithdrawToken(0),
+      "user was able to request withdrawal of 0 notes"
+    ).to.be.reverted
+
+    //require 2: withdraw amount show be less than or equal to curent user balance
+    expect(
+      chorus.connect(acc1).requestWithdrawToken(11n*precision),
+      "user was able to request withdrawal of more than their notes balance"
+    ).to.be.reverted
+
+    //user requests to withdraw a legal balance
+    await chorus.connect(acc1).requestWithdrawToken(3n*precision)
+    expect(await chorus.balanceOf(acc1.address)).to.equal(
+      7n*precision,
+      "user has wrong balance of notes after withdrawal request"
+    )
 
   })
   
