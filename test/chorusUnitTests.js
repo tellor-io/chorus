@@ -249,6 +249,12 @@ describe("Chorus Unit Tests", function () {
   
   it("set admin", async function () {
 
+    //require 1: can't set owner to 0 address
+    expect(
+      chorus.connect(owner).setAdmin(0),
+      "admin was able to change admin address to 0 address"
+    ).to.be.reverted
+
   })
 
   it("set collateral threshold", async function () {
