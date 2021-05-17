@@ -145,14 +145,24 @@ describe("Chorus Unit Tests", function () {
 
   })
 
-  it("liquidate", async function () {
+  it("liquidate / set liquidation penalty", async function () {
 
     //setup: deposit collateral and mint token to user, user withdraws for collateral
+    let liquidationPenalty = 0.2
+    chorus.connect(owner).setLiquidationPenalty(BigInt(liquidationPenalty * 100) * precision)
     await chorus.connect(owner).depositCollateral(20n*precision)
     await chorus.connect(owner).mintToken(10n*precision, acc1.address)
+    await chorus.connect(owner).mintToken(10n*precision, acc3.address)
     await chorus.connect(acc1).requestWithdrawToken(10n*precision)
     await chorus.connect(acc3).requestWithdrawToken(10n*precision)
 
+    let notesToBurn = Number(await chorus.balanceOf(acc1.address))
+    let oldCollatBalance = Number(await collateralTkn.balanceOf(acc1.address))
+    let oldBeneficiaryCollatBalance = Number(await collateralTkn.balanceOf(beneficiary.address))
+    let totalSupply = Number(await chorus.totalSupply())
+    let tokenSupplyRatio = Number(await collateralTkn.balanceOf(chorus.address)) / totalSupply
+    let collatAmount = notesToBurn*tokenSupplyRatio
+    let collatPenalty = collatAmount*Number(await chorus.liquidationPenalty())
 
     //require 1: no liquidation unless undercollateralized
     expect(chorus.connect(acc1).liquidate(),
@@ -176,15 +186,18 @@ describe("Chorus Unit Tests", function () {
       0,
       "user still has notes after liquidation"
     )
-    expect(await collateralTkn.balanceOf(acc1.address)).to.equal(
-      0,
-      
-    )
 
     //require 3: should transfer collateral (minus liquidation penalty) back to user
-    expect
-
+    expect(Number(await collateralTkn.balanceOf(acc1.address))).to.equal(
+      oldCollatBalance + collatAmount - collatPenalty,
+      "liquidation transferred the wrong amount of collateral to the user"
+    )
+    
     //require 4: should transfer liquidation penalty to inflation beneficiary
+    expect(Number(await collateralTkn.balanceOf(beneficiary.address))).to.equal(
+      oldBeneficiaryCollatBalance + collatPenalty,
+      "liquidation transferred the wrong amount of collateral penalty to the inflation beneficiary"
+    )
 
   })
 
