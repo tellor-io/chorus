@@ -202,10 +202,20 @@ describe("Chorus Unit Tests", function () {
   })
 
   it("mint token", async function () {
+    //setup
+    await chorus.connect(owner).depositCollateral(20n*precision)
+
+    //require 1: shouldn't undercollateralize through minting
+    expect(
+      chorus.connect(owner).mintToken(100000n*precision),
+      "owner undercollateralized system with minting"
+    ).to.be.reverted
+
 
   })
 
   it("request to withdraw token", async function () {
+    
 
   })
   
