@@ -211,11 +211,18 @@ describe("Chorus Unit Tests", function () {
       "owner undercollateralized system with minting"
     ).to.be.reverted
 
+    await chorus.connect(owner).mintToken(10n*precision, acc1.address)
+
+    expect(await chorus.balanceOf(acc1.address)).to.equal(
+      10n*precision,
+      "user was minted wrong number of notes"
+    )
+
 
   })
 
   it("request to withdraw token", async function () {
-    
+
 
   })
   
