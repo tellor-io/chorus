@@ -278,6 +278,26 @@ describe("Chorus Unit Tests", function () {
   })
 
   it("update inflation", async function () {
+    //setup
+    let beneficiaryBalance = 0
+    let beneficiaryInflReward = 
+
+    await chorus.connect(owner).depositCollateral(20n*precision)
+    await chorus.connect(owner).mintToken(10n*precision, acc1.address)
+
+    //fast forward 1 year
+    evmCurrentBlockTime += secsPerYear
+    await waffle.provider.send("evm_setNextBlockTimestamp", [evmCurrentBlockTime])
+    await waffle.provider.send("evm_mine")
+    let secsPassed = evmCurrentBlockTime - Number(await chorus.inflLastUpdate())
+    await chorus.updateInflation()
+    expect(Number(await chorus.balanceOf(beneficiary.address)) / Number(precision)).to.be.closeTo(
+      Number(await chorus.totalSupply() * nominalInflationRateYear) / Number(precision),
+      0.01,
+      "incorrect balance minted to inflation beneficiary"
+    )
+
+
 
   })
 
