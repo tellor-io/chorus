@@ -302,10 +302,22 @@ describe("Chorus Unit Tests", function () {
   })
 
   it("withdraw collateral", async function () {
+    //setup
+    await chorus.connect(owner).depositCollateral(20n*precision)
+
+    //require: owner can't withdraw collateral into under-collateralization
+    expect(
+      chorus.connect(owner).withdrawCollateral(10n*precision),
+      "owner was able to withdraw collateral to the point of under-collateralization"
+    ).to.be.reverted
 
   })
 
   it("withdraw token", async function () {
-
+    //setup
+    await chorus.connect(owner).depositCollateral(20n*precision)
+    await chorus.connect(owner).mintToken(10n*precision, acc1.address)
+    //user requests to withdraw a legal balance
+    await chorus.connect(acc1).requestWithdrawToken(3n*precision)
   })
 })
