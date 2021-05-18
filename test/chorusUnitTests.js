@@ -317,7 +317,29 @@ describe("Chorus Unit Tests", function () {
     //setup
     await chorus.connect(owner).depositCollateral(20n*precision)
     await chorus.connect(owner).mintToken(10n*precision, acc1.address)
+
+    //require 1: user has to have requested to withdraw to withdraw notes
+    expect(
+      chorus.connect(acc1).withdrawToken(),
+      "user stole collateral without depositing notes"
+    ).to.be.reverted
+
+    //require 2: user has to wait to withdraw after requesting
+    await chorus.connect(acc1).requestWithdrawToken(10n*precision)
+    expect(
+      chorus.connect(acc1).withdrawToken(),
+      "user was able to withdraw without waiting"
+    ).to.be.reverted
+
     //user requests to withdraw a legal balance
-    await chorus.connect(acc1).requestWithdrawToken(3n*precision)
+    evmCurrentBlockTime = evmCurrentBlockTime + Number(await chorus.collateralPriceAge()) + 86400*21 //1 day for each 5 percent of ts
+    await waffle.provider.send("evm_setNextBlockTimestamp", [evmCurrentBlockTime])
+    await waffle.provider.send("evm_mine")
+
+    await chorus.connect(acc1).withdrawToken()
+    expect(Number(await collateralTkn.balanceOf(acc1.address)) / Number(precision)).to.equal(
+      notePrice / Number(precision) / collateralPrice * 10
+    )
+
   })
 })
