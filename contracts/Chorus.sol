@@ -22,7 +22,7 @@ contract Chorus is Inflation, OracleGetter, ERC20 {
         uint256 _collateralAmnt,
         uint256 _collateralPenalty
     );//emits upon a liquidation
-    event LiquidationPenatly(uint256 _newPenalty);//emits when the liquidation penalty changes
+    event LiquidationPenalty(uint256 _newPenalty);//emits when the liquidation penalty changes
     event MintTokens(
         address _holder,
         uint256 _amount,
@@ -50,7 +50,7 @@ contract Chorus is Inflation, OracleGetter, ERC20 {
     uint256 public collateralPriceGranularity; //usually 1000000 in the Tellor system
     uint256 public collateralThreshold = 15e17; // 150%.
     uint256 public collateralPriceAge = 3600; // e.g. 1hr.  This is the delay in the feed from Tellor
-    uint256 public liquidationPenatly = 0;
+    uint256 public liquidationPenalty = 0;
     uint256 public inflRatePerSec;// The rate at which the token decreases value. 1e18 precision. 100e18 is 100%.
     uint256 public inflLastUpdate = block.timestamp;
     address public inflBeneficiary; // Where to send the inflation tokens.
@@ -71,7 +71,7 @@ contract Chorus is Inflation, OracleGetter, ERC20 {
     /**
      * @dev This is the constructor, sets the inital paramaters in the system
      * The parameters include, the Tellor Address, collateral token's address,
-     * collateral token's requestID, the price granualrity, the token name, 
+     * collateral token's requestID, the price granularity, the token name, 
      * token's symbol, inflation rate per year, and the inflation beneficiary 
      */
     constructor(
@@ -93,7 +93,7 @@ contract Chorus is Inflation, OracleGetter, ERC20 {
         collateralToken = ERC20(_collateralToken);
         collateralPriceGranularity = _collateralPriceGranularity;
         require(_collateralPriceGranularity > 0 && _collateralPriceGranularity <= 1e18, "value not within allowed limits");
-        require(_inflBeneficiary != address(0), "benificiary address not set");
+        require(_inflBeneficiary != address(0), "beneficiary address not set");
         inflBeneficiary = _inflBeneficiary;
         inflRatePerSec = yearlyRateToPerSec(_inflRatePerYear);
     }
@@ -156,16 +156,20 @@ contract Chorus is Inflation, OracleGetter, ERC20 {
     function liquidate() external {
         require(
             collateralRatio() < collateralThreshold,
-            "collateral utilizatoin is above threshold"
+            "collateral utilization is above threshold"
         );
-        require(balanceOf(msg.sender) > 0, "msg sender doesn't own any tokens");
+        require(
+            (balanceOf(msg.sender) > 0) || (withdrawRequested[msg.sender].amount > 0),
+            "msg sender doesn't own any tokens"
+        );
         uint256 _tknSuplyRatio =
             wdiv(collateralToken.balanceOf(address(this)), totalSupply());
         uint256 _tokensToBurn = balanceOf(msg.sender);
         uint256 _collatAmt = wmul(_tokensToBurn, _tknSuplyRatio);
-        uint256 _collatPenalty = wmul(_collatAmt, liquidationPenatly);
+        uint256 _collatPenalty = wmul(_collatAmt, liquidationPenalty);
         emit Liquidate(msg.sender, _tokensToBurn, _collatAmt, _collatPenalty);
         _burn(msg.sender, _tokensToBurn);
+        withdrawRequested[msg.sender].amount = 0;
         require(
             collateralToken.transfer(msg.sender, sub(_collatAmt, _collatPenalty)),
             "collateral liquidation transfer fails"
@@ -230,7 +234,7 @@ contract Chorus is Inflation, OracleGetter, ERC20 {
     function setCollateralThreshold(uint256 _amount)
         external
         onlyAdmin
-        within100e18Range(_amount)
+        within100e18Range(_amount) //between 0% and 10,000%
     {
         collateralThreshold = _amount;
         emit CollateralThreshold(_amount);
@@ -240,13 +244,13 @@ contract Chorus is Inflation, OracleGetter, ERC20 {
      * @dev Allows the admin to set the liquidation penalty
      * @param _amount the amount of the liquidation penalty
      */
-    function setLiquidationPenatly(uint256 _amount)
+    function setLiquidationPenalty(uint256 _amount)
         external
         onlyAdmin
         within100e18Range(_amount)
     {
-        liquidationPenatly = wdiv(_amount, 100e18); // Convert to a fraction.
-        emit LiquidationPenatly(liquidationPenatly);
+        liquidationPenalty = wdiv(_amount, 100e18); // Convert to a fraction.
+        emit LiquidationPenalty(liquidationPenalty);
     }
 
     /**
