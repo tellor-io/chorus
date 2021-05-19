@@ -58,22 +58,6 @@ contract DSMath {
         return c;
     }
 
-    function min(uint256 x, uint256 y) internal pure returns (uint256 z) {
-        return x <= y ? x : y;
-    }
-
-    function max(uint256 x, uint256 y) internal pure returns (uint256 z) {
-        return x >= y ? x : y;
-    }
-
-    function imin(int256 x, int256 y) internal pure returns (int256 z) {
-        return x <= y ? x : y;
-    }
-
-    function imax(int256 x, int256 y) internal pure returns (int256 z) {
-        return x >= y ? x : y;
-    }
-
     uint256 public constant WAD = 10**18;
     uint256 public constant RAY = 10**27;
 

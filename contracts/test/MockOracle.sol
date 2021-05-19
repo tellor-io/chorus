@@ -214,17 +214,6 @@ contract MockOracle {
     }
 
     /**
-     * @dev Internal function to burn tokens for the user
-     */
-    function _burn(address account, uint256 amount) internal virtual {
-        require(account != address(0), "ERC20: burn from the zero address");
-
-        _balances[account] = _balances[account] - amount;
-        _totalSupply = _totalSupply - amount;
-        emit Transfer(account, address(0), amount);
-    }
-
-    /**
      * @dev Internal function to approve tokens for the user
      */
     function _approve(
