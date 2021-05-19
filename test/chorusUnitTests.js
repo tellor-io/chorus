@@ -337,8 +337,9 @@ describe("Chorus Unit Tests", function () {
     await waffle.provider.send("evm_mine")
 
     await chorus.connect(acc1).withdrawToken()
-    expect(Number(await collateralTkn.balanceOf(acc1.address)) / Number(precision)).to.equal(
-      notePrice / Number(precision) / collateralPrice * 10
+    expect(Number(await collateralTkn.balanceOf(acc1.address)) / Number(precision)).to.be.closeTo(
+      Number(accrueInflation(notePrice, 86400*21)) / Number(precision) / collateralPrice * 10,
+      0.01
     )
 
   })
