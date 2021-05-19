@@ -170,7 +170,7 @@ describe("Chorus Unit Tests", function () {
 
     //tank collateral price
     await oracle.submitValue(1, (collateralPrice / 1000) * oraclePricePrecision)
-    evmCurrentBlockTime = evmCurrentBlockTime + Number(await chorus.collateralPriceAge()) + 100
+    evmCurrentBlockTime = evmCurrentBlockTime + Number(await chorus.collateralPriceAge()) + 50000
     await waffle.provider.send("evm_setNextBlockTimestamp", [evmCurrentBlockTime])
     await waffle.provider.send("evm_mine")
 
