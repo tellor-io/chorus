@@ -150,6 +150,10 @@ contract Chorus is Inflation, OracleGetter, ERC20 {
         );
     }
 
+    function getWithdrawAmount(address _user) external view returns (uint256) {
+        return withdrawRequested[_user].amount;
+    }
+
     /**
      * @dev Function to allow anyone to liquidate the system if it is undercollateralized
      */
@@ -203,7 +207,7 @@ contract Chorus is Inflation, OracleGetter, ERC20 {
         require(_amount > 0, "amount should be greater than 0");
         require(balanceOf(msg.sender) >= _amount, "not enough balance");
         withdrawRequested[msg.sender].requestDate = block.timestamp;
-        withdrawRequested[msg.sender].amount = _amount;
+        withdrawRequested[msg.sender].amount += _amount;
         _transfer(msg.sender, address(this), _amount);
         emit WithdrawTokenRequest(msg.sender, _amount);
     }

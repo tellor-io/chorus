@@ -548,4 +548,40 @@ describe("Chorus e2e tests", function () {
 
   })
 
+  it("prevent token loss on note withdrawal request while honoring withdrawal delay", async function () {
+
+    //setup
+    let collateralDeposit = 30n
+    let mintedTokens = 100n
+    await chorus.depositCollateral(collateralDeposit*precision)
+    await chorus.mintToken(mintedTokens*precision, acc1.address)
+
+    //user requests withdrawal
+    await chorus.connect(acc1).requestWithdrawToken(5n*precision) //5% of total supply
+    expect(await chorus.balanceOf(acc1.address)).to.equal(
+      95n*precision,
+      "user lost tokens after withdrawal request"
+    )
+    //user requests withdrawal again
+    await chorus.connect(acc1).requestWithdrawToken(10n*precision) //10% of total supply
+
+    //they shouldn't be able to withdraw after 2 day (for first 5% of ts)
+    evmCurrentBlockTime = evmCurrentBlockTime + 86400*2
+    await waffle.provider.send("evm_setNextBlockTimestamp", [evmCurrentBlockTime])
+    await waffle.provider.send("evm_mine")
+    await expect(
+      chorus.connect(acc1).withdrawToken(),
+      "user was able to withdraw token early through second withdrawal request"
+    ).to.be.reverted
+
+    //they should have to wait 3 days for (15% of ts)
+    evmCurrentBlockTime = evmCurrentBlockTime + 86400*2 + 100 //another 2 days + a few blocks
+    await waffle.provider.send("evm_setNextBlockTimestamp", [evmCurrentBlockTime])
+    await waffle.provider.send("evm_mine")
+    await chorus.connect(acc1).withdrawToken()
+
+    expect(BigInt(await chorus.totalSupply()) / precision).to.equal(85n)
+
+  })
+
 });
