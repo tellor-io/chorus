@@ -132,7 +132,7 @@ describe("Chorus Unit Tests", function () {
     //onlyAdmin: users shouldn't be able to deposit collateral
     await collateralTkn.mint(acc1.address, 10n*precision)
     let accColatteralBalance = await collateralTkn.balanceOf(acc1.address)
-    expect(chorus.connect(acc1).depositCollateral(accColatteralBalance),
+    await expect(chorus.connect(acc1).depositCollateral(accColatteralBalance),
       "non-admin deposited collateral").to.be.reverted
     //require 1: owner must deposit non-zero amount of collateral 
     expect(chorus.connect(owner).depositCollateral(0),
