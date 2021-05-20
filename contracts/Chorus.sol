@@ -150,10 +150,6 @@ contract Chorus is Inflation, OracleGetter, ERC20 {
         );
     }
 
-    function getWithdrawAmount(address _user) external view returns (uint256) {
-        return withdrawRequested[_user].amount;
-    }
-
     /**
      * @dev Function to allow anyone to liquidate the system if it is undercollateralized
      */
