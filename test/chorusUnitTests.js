@@ -279,7 +279,7 @@ describe("Chorus Unit Tests", function () {
     //modifier: liqudation penalty can't be greater than 100%
     expect(
       chorus.connect(owner).setLiquidationPenalty(101e18),
-      "admisn was able to set liquidation penalty greater than 100%"
+      "admin was able to set liquidation penalty greater than 100%"
     ).to.be.reverted
 
   })
