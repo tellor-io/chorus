@@ -269,8 +269,8 @@ describe("Chorus Unit Tests", function () {
     ).to.be.reverted
 
     await expect(
-      chorus.connect(owner).setCollateralThreshold(BigInt(1)), //arbitrarily low collat threshold
-      "owner forced liquidation"
+      chorus.connect(owner).setCollateralThreshold(BigInt(99) / BigInt(100) * precision), //99%
+      "owner set collateral threshold below 100%"
     ).to.be.reverted
   })
 
