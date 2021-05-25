@@ -229,7 +229,7 @@ contract Chorus is Inflation, OracleGetter, ERC20 {
 
     /**
      * @dev Allows the admin to set the Collateral threshold
-     * @param _amount new collateral threshold
+     * @param _amount new collateral threshold. 1e18 is 100%
      */
     function setCollateralThreshold(uint256 _amount)
         external
