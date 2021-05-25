@@ -237,8 +237,8 @@ contract Chorus is Inflation, OracleGetter, ERC20 {
         within100e18Range(_amount) //between 0% and 10,000%
     {
         require(
-            _amount > collateralRatio(),
-            "forced liquidation not allowed"
+            _amount > 1e18, // > 100%
+            "can only set collateral threshold above 100%"
         );
         collateralThreshold = _amount;
         emit CollateralThreshold(_amount);
