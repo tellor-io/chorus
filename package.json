@@ -27,10 +27,12 @@
     "ethereum-waffle": "^3.2.1",
     "hardhat": "^2.0.10",
     "hardhat-dependency-compiler": "^1.1.0",
-    "hardhat-deploy": "^0.7.0-beta.50",
+    "hardhat-deploy": "^0.7.9",
     "hardhat-deploy-ethers": "^0.3.0-beta.7",
     "hardhat-gas-reporter": "^1.0.3",
     "hardhat-log-remover": "^2.0.0",
+    "prettier": "^2.3.0",
+    "prettier-plugin-solidity": "^1.0.0-beta.10",
     "tellorplayground": "github:tellor-io/tellorplayground#main"
   },
   "dependencies": {
