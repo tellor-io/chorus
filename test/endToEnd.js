@@ -199,7 +199,7 @@ describe("Chorus e2e tests", function () {
   });
 
   it("Withdraw collateral", async function () {
-    let collateralDeposit = 10n;
+    let collateralDeposit = 11n;
     let ownerCollateralBalance = await collateralTkn.balanceOf(owner.address)
     await chorus.depositCollateral(collateralDeposit * precision)
     expect(Number(await collateralTkn.balanceOf(owner.address))).to.equal(Number(ownerCollateralBalance) - Number(collateralDeposit*precision));
@@ -208,9 +208,9 @@ describe("Chorus e2e tests", function () {
     await chorus.mintToken(tokensMinted * precision, acc1.address)
     let expWithdrawAmnt = 1n * precision;
     await chorus.withdrawCollateral(expWithdrawAmnt)
-    expect(Number(await collateralTkn.balanceOf(owner.address))).to.equal(Number(expWithdrawAmnt + 90n*precision));
-    expect(chorus.withdrawCollateral(1n * precision), "collateral withdraw puts the system below the threshold").to.be.reverted
-    expect(Number(await collateralTkn.balanceOf(owner.address))).to.equal(Number(expWithdrawAmnt + 90n*precision));
+    expect(Number(await collateralTkn.balanceOf(owner.address))).to.equal(Number(expWithdrawAmnt + 89n*precision));
+    await expect(chorus.withdrawCollateral(2n * precision), "collateral withdraw puts the system below the threshold").to.be.reverted
+    expect(Number(await collateralTkn.balanceOf(owner.address))).to.equal(Number(expWithdrawAmnt + 89n*precision));
   })
 
   it("Liquidation", async function () {

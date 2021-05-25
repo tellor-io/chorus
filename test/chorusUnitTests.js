@@ -259,12 +259,19 @@ describe("Chorus Unit Tests", function () {
 
   it("set collateral threshold", async function () {
 
+    await chorus.connect(owner).depositCollateral(20n*precision)
+    await chorus.connect(owner).mintToken(10n*precision, acc1.address)
+
     //modifier: collateral ratio should be between 0% and 10,000%
-    expect(
+    await expect(
       chorus.connect(owner).setCollateralThreshold(101e18),
       "admin was able to set collateral threshold above limit of 10,000%"
     ).to.be.reverted
 
+    await expect(
+      chorus.connect(owner).setCollateralThreshold(BigInt(99) / BigInt(100) * precision), //99%
+      "owner set collateral threshold below 100%"
+    ).to.be.reverted
   })
 
   it("set liquidation penalty", async function () {
@@ -272,7 +279,7 @@ describe("Chorus Unit Tests", function () {
     //modifier: liqudation penalty can't be greater than 100%
     expect(
       chorus.connect(owner).setLiquidationPenalty(101e18),
-      "admisn was able to set liquidation penalty greater than 100%"
+      "admin was able to set liquidation penalty greater than 100%"
     ).to.be.reverted
 
   })
