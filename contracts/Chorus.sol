@@ -14,32 +14,36 @@ import "hardhat/console.sol";
 // slither-disable-next-line missing-inheritance
 contract Chorus is Inflation, OracleGetter, ERC20 {
     /*Events*/
-    event CollateralThreshold(uint256 _collateralThreshold);//emits if collateral threshold changes
-    event CollateralPriceAge(uint256 _collateralPriceAge);//emits if collateral price age changes
+    event CollateralThreshold(uint256 _collateralThreshold); //emits if collateral threshold changes
+    event CollateralPriceAge(uint256 _collateralPriceAge); //emits if collateral price age changes
     event Liquidate(
         address _party,
         uint256 _tokensAmnt,
         uint256 _collateralAmnt,
         uint256 _collateralPenalty
-    );//emits upon a liquidation
-    event LiquidationPenalty(uint256 _newPenalty);//emits when the liquidation penalty changes
+    ); //emits upon a liquidation
+    event LiquidationPenalty(uint256 _newPenalty); //emits when the liquidation penalty changes
     event MintTokens(
         address _holder,
         uint256 _amount,
         address _to,
         uint256 _collateralRatio
-    );//emits when new tokens are minted
-    event NewAdmin(address _newAdmin);//emits when a new admin is set
+    ); //emits when new tokens are minted
+    event NewAdmin(address _newAdmin); //emits when a new admin is set
     event WithdrawCollateral(
         address _holder,
         uint256 _collateralAmnt,
         uint256 _collateralRatio
-    );//emits when collateral is withdrawn
-    event WithdrawToken(address _holder, uint256 _tokenAmnt, uint256 _collateralAmnt);//emits when tokens are withdrawn
+    ); //emits when collateral is withdrawn
+    event WithdrawToken(
+        address _holder,
+        uint256 _tokenAmnt,
+        uint256 _collateralAmnt
+    ); //emits when tokens are withdrawn
     event WithdrawTokenRequest(address _user, uint256 _amount);
-    
+
     /*Variables*/
-    struct WithdrawDetails{
+    struct WithdrawDetails {
         uint256 amount;
         uint256 requestDate;
     }
@@ -51,7 +55,7 @@ contract Chorus is Inflation, OracleGetter, ERC20 {
     uint256 public collateralThreshold = 15e17; // 150%.
     uint256 public collateralPriceAge = 3600; // e.g. 1hr.  This is the delay in the feed from Tellor
     uint256 public liquidationPenalty = 0;
-    uint256 public inflRatePerSec;// The rate at which the token decreases value. 1e18 precision. 100e18 is 100%.
+    uint256 public inflRatePerSec; // The rate at which the token decreases value. 1e18 precision. 100e18 is 100%.
     uint256 public inflLastUpdate = block.timestamp;
     address public inflBeneficiary; // Where to send the inflation tokens.
     mapping(address => WithdrawDetails) withdrawRequested;
@@ -63,7 +67,10 @@ contract Chorus is Inflation, OracleGetter, ERC20 {
     }
 
     modifier within100e18Range(uint256 _value) {
-        require(_value > 0 && _value < 100e18, "value not within allowed limits");
+        require(
+            _value > 0 && _value < 100e18,
+            "value not within allowed limits"
+        );
         _;
     }
 
@@ -71,8 +78,8 @@ contract Chorus is Inflation, OracleGetter, ERC20 {
     /**
      * @dev This is the constructor, sets the inital paramaters in the system
      * The parameters include, the Tellor Address, collateral token's address,
-     * collateral token's requestID, the price granularity, the token name, 
-     * token's symbol, inflation rate per year, and the inflation beneficiary 
+     * collateral token's requestID, the price granularity, the token name,
+     * token's symbol, inflation rate per year, and the inflation beneficiary
      */
     constructor(
         address payable _tellorAddress,
@@ -86,13 +93,17 @@ contract Chorus is Inflation, OracleGetter, ERC20 {
         bool _isWhitelisted
     )
         OracleGetter(_tellorAddress)
-        ERC20(_tokenName, _tokenSymbol,_isWhitelisted)
+        ERC20(_tokenName, _tokenSymbol, _isWhitelisted)
         within100e18Range(_inflRatePerYear)
     {
         collateralID = _collateralID;
         collateralToken = ERC20(_collateralToken);
         collateralPriceGranularity = _collateralPriceGranularity;
-        require(_collateralPriceGranularity > 0 && _collateralPriceGranularity <= 1e18, "value not within allowed limits");
+        require(
+            _collateralPriceGranularity > 0 &&
+                _collateralPriceGranularity <= 1e18,
+            "value not within allowed limits"
+        );
         require(_inflBeneficiary != address(0), "beneficiary address not set");
         inflBeneficiary = _inflBeneficiary;
         inflRatePerSec = yearlyRateToPerSec(_inflRatePerYear);
@@ -125,17 +136,21 @@ contract Chorus is Inflation, OracleGetter, ERC20 {
     function collateralRatio() public view returns (uint256) {
         uint256 _collateralBalance = collateralToken.balanceOf(address(this));
         // slither-disable-next-line incorrect-equality
-        if(totalSupply() == 0 || _collateralBalance == 0) {
+        if (totalSupply() == 0 || _collateralBalance == 0) {
             return 0;
         }
         uint256 _collateralValue = wmul(collateralPrice(), _collateralBalance);
         uint256 tokenSupplyWithInflInterest =
-            accrueInterest(totalSupply(), inflRatePerSec, block.timestamp - inflLastUpdate);
+            accrueInterest(
+                totalSupply(),
+                inflRatePerSec,
+                block.timestamp - inflLastUpdate
+            );
         uint256 _tokenValue = wmul(tokenPrice(), tokenSupplyWithInflInterest);
-        if(_tokenValue == 0){
+        if (_tokenValue == 0) {
             return 100e18;
         }
-        return wdiv(_collateralValue,_tokenValue);
+        return wdiv(_collateralValue, _tokenValue);
     }
 
     /**
@@ -159,7 +174,8 @@ contract Chorus is Inflation, OracleGetter, ERC20 {
             "collateral utilization is above threshold"
         );
         require(
-            (balanceOf(msg.sender) > 0) || (withdrawRequested[msg.sender].amount > 0),
+            (balanceOf(msg.sender) > 0) ||
+                (withdrawRequested[msg.sender].amount > 0),
             "msg sender doesn't own any tokens"
         );
         uint256 _tknSuplyRatio =
@@ -171,7 +187,10 @@ contract Chorus is Inflation, OracleGetter, ERC20 {
         _burn(msg.sender, _tokensToBurn);
         withdrawRequested[msg.sender].amount = 0;
         require(
-            collateralToken.transfer(msg.sender, sub(_collatAmt, _collatPenalty)),
+            collateralToken.transfer(
+                msg.sender,
+                sub(_collatAmt, _collatPenalty)
+            ),
             "collateral liquidation transfer fails"
         );
         require(
@@ -195,7 +214,7 @@ contract Chorus is Inflation, OracleGetter, ERC20 {
         emit MintTokens(msg.sender, _amount, _to, _cRatio);
     }
 
-     /**
+    /**
      * @dev Allows a user to request to withdraw tokens
      * @param _amount the amount of tokens to withdraw
      */
@@ -243,7 +262,7 @@ contract Chorus is Inflation, OracleGetter, ERC20 {
         collateralThreshold = _amount;
         emit CollateralThreshold(_amount);
     }
-    
+
     /**
      * @dev Allows the admin to set the liquidation penalty
      * @param _amount the amount of the liquidation penalty
@@ -253,7 +272,7 @@ contract Chorus is Inflation, OracleGetter, ERC20 {
         onlyAdmin
         within100e18Range(_amount)
     {
-        liquidationPenalty = wdiv(_amount, 100e18); // Convert to a fraction.
+        liquidationPenalty = wdiv(_amount, 100e18); // Convert _amount to a fraction.
         emit LiquidationPenalty(liquidationPenalty);
     }
 
@@ -269,7 +288,7 @@ contract Chorus is Inflation, OracleGetter, ERC20 {
                 block.timestamp - inflLastUpdate
             );
     }
-    
+
     /**
      * @dev Function to reduce token price by the inflation rate,
      * increases the total supply by the inflation rate and
@@ -308,15 +327,18 @@ contract Chorus is Inflation, OracleGetter, ERC20 {
     }
 
     /**
-     * @dev Allows a user to withdraw tokens
+     * @dev Allows a user to withdraw tokens after request and waiting period
      */
     function withdrawToken() external {
         WithdrawDetails memory wd = withdrawRequested[msg.sender];
         uint256 _amount = withdrawRequested[msg.sender].amount;
         require(_amount > 0, "amount should be greater than 0");
-        uint256 _waitPeriod = 1 + 100 * _amount / totalSupply() / 5; //increases by 1 day for every 5 percent
+        uint256 _waitPeriod = 1 + (100 * _amount) / totalSupply() / 5; //increases by 1 day for every 5 percent
         // slither-disable-next-line timestamp
-        require(block.timestamp - wd.requestDate >= 86400 * _waitPeriod, "must wait to withdraw");
+        require(
+            block.timestamp - wd.requestDate >= 86400 * _waitPeriod,
+            "must wait to withdraw"
+        );
         withdrawRequested[msg.sender].amount = 0;
         uint256 _collatPrice = collateralPrice();
         uint256 _priceRatio = wdiv(tokenPrice(), _collatPrice);
