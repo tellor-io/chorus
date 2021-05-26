@@ -1,6 +1,3 @@
-const { ethers } = require("ethers");
-const { run } = require("hardhat");
-
 require("@nomiclabs/hardhat-waffle");
 require("dotenv").config();
 require("hardhat-gas-reporter");
@@ -14,46 +11,6 @@ task("accounts", "Prints the list of accounts", async () => {
     console.log(account.address);
   }
 });
-
-task("deploy", "Deploy and verify the contracts")
-  .addParam("network", "rinkeby or empty for mainnet")
-  .setAction(async taskArgs => {
-    
-    //compile contracts
-    var network = taskArgs.network
-    await run("compile")
-
-    //deploy inflation contract
-    console.log("deploy chorus")
-    const chr = await ethers.getContractFactory("Chorus")
-    const chorus = await chr.deploy()
-    console.log("chorus deployed to: ", chorus.address)
-    await chorus.deployed()
-
-    if (network == "mainnet") {
-      console.log("Chorus contract deployed to: ", "https://etherscan.io/address/" + chorus.address)
-      console.log("Tx hash: ", "https://etherscan.io/tx/" + chorus.deployTransaction.hash)
-    } else if (network == "rinkeby") {
-      console.log("Chorus contract deployed to: ", "https://rinkeby.etherscan.io/address/" + chorus.address)
-      console.log("Tx hash:", "https://rinkeby.etherscan.io/tx/" + chorus.deployTransaction.hash)
-    } else {
-      console.log("Please add network explorer details")
-    }
-
-    // Wait for few confirmed transactions.
-    // Otherwise the etherscan api doesn't find the deployed contract.
-    console.log('waiting for tx confirmation...');
-    await extension.deployTransaction.wait(3)
-
-    console.log('submitting extension for etherscan verification...')
-
-    await run("verify:verify", {
-      address: chorus.address,
-    },
-    )
-
-    
-  })
 
 /**
  * @type import('hardhat/config').HardhatUserConfig
