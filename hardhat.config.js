@@ -1,6 +1,3 @@
-const { ethers } = require("ethers");
-const { run } = require("hardhat");
-
 require("@nomiclabs/hardhat-waffle");
 require("dotenv").config();
 require("hardhat-gas-reporter");
