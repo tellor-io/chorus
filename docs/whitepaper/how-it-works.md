@@ -28,15 +28,13 @@ The issuing party \(IP\) deploys an “Anthem” \(smart contract referring to a
 The Notes can now be used as a currency as the community sees fit.
 {% endhint %}
 
-In the case that the value of the collateral drops below 100% \(or the configured collateralization ratio\), any party can liquidate the system. In this case, the Note holders can now access the collateral at the current conversion rate \(e.g. .9 to 1\) once the withdrawal period is over If the owner wants to avoid liquidation, they can place more collateral in the contract.
-
 The conversion ratio for withdrawing notes is set by the price target \(e.g. one n, and then changes based upon the set inflation rate in the contract. Inflation lowers the conversion rate by issuing more Notes to the inflation beneficiary \(IB\) without increasing the underlying collateral amount. In order to prevent parties from trying to game the oracle updates, the withdrawal delay makes parties wait a day before their withdrawal goes through.
 
 ### **Collateral**
 
 The flexible nature of Chorus allows the collateral to be any ERC20 supported by the Tellor oracle system. These can be any token, stablecoin, or even asset-backed token. The envisioned use cases are for the creator of an anthem to be an owner or stakeholder in the collateral token, however this does not necessarily have to be the case. Chorus can also be used to add a custom monetary policy to a stablecoin or other asset backed coin to allow for a tailored policy specifically for creating a money for the issuer’s community.
 
-The creator of a sheet also does not have to be just one party. A contract can be set up as the owner which can have tools in place to allow for pooled funds or risk sharing when locking collateral in the anthem.
+The creator of an anthem also does not have to be just one party. A contract can be set up as the owner which can have tools in place to allow for pooled funds or risk sharing when locking collateral in the anthem.
 
 ### **The Oracle and Liquidation**
 
