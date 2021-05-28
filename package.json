@@ -32,7 +32,8 @@
     "hardhat-gas-reporter": "^1.0.3",
     "hardhat-log-remover": "^2.0.0",
     "prettier": "^2.3.0",
-    "prettier-plugin-solidity": "^1.0.0-beta.10"
+    "prettier-plugin-solidity": "^1.0.0-beta.10",
+    "tellorplayground": "github:tellor-io/tellorplayground#main"
   },
   "dependencies": {
     "dotenv": "^8.2.0",
