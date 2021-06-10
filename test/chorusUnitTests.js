@@ -257,6 +257,17 @@ describe("Chorus Unit Tests", function () {
 
   })
 
+  it("set collateral price age", async function() {
+
+    const newCollateralPriceAge = 0
+
+    //no require statements on this one
+
+    await expect(chorus.connect(owner).setCollateralPriceAge(newCollateralPriceAge)).to.emit(
+      chorus, 'CollateralPriceAge'
+    ).withArgs(newCollateralPriceAge)
+  })
+
   it("set collateral threshold", async function () {
 
     await chorus.connect(owner).depositCollateral(20n*precision)
