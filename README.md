@@ -1,6 +1,6 @@
 <p align="center">
   <a href='https://www.tellor.io/'>
-    <img src= 'https://raw.githubusercontent.com/tellor-io/chorus/master/frontend/public/apple-touch-icon.png' width="250" height="200" alt='tellor.io' />
+    <img src= 'apple-touch-icon.png' width="250" height="200" alt='tellor.io' />
   </a>
 </p>
 
